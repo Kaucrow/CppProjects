@@ -10,6 +10,7 @@ int main(){
     srand(time(NULL));
     char rain[7] = {'@','%','#','+','=','*','.'};
     char title[9] = {'h','e','l','l','o','w','r',' ',' '};
+    char screen[20][20] = {};
     int rainLimit[20], titleLimit[20] = {};             // limit of chars to print of rain and title arrays
     int rainPos[20] = {}, titlePos[20] = {};            // current char being printed from rain or title array
     int rainRow[20];                                    // row where the next rain char will be printed on
@@ -31,13 +32,13 @@ int main(){
                     }
                     else if(rainCount[col] == 3){ completedRain++; chance -= 2 * completedRain; rainCount[col]++; }
                     // if the title has just been printed, keep printing it on the same position
-                    if(rainCount[col] == 4 && row >= 10 && row <= 16){ cout << title[row - 10]; } 
+                    if(rainCount[col] == 4 && row >= 10 && row <= 16){ screen[row][col] = title[row - 10]; } 
                 }
 
                 // WHEN TITLE IS ACTIVE
                 if(titleFlag[col] == 1){ 
                     if(row >= rainRow[col] - titleLimit[col] && row < rainRow[col]){
-                        cout << title[titlePos[col]];
+                        screen[row][col] = title[titlePos[col]];
                         titlePos[col]++;
                     }
                 }
@@ -46,7 +47,7 @@ int main(){
                 if(rainRow[col] == row){
                     // if there are still rain chars left to print
                     if(rainPos[col] <= rainLimit[col]){
-                        cout << rain[rainPos[col]];
+                        screen[row][col] = rain[rainPos[col]];
                         rainRow[col]++;
                         rainPos[col]++;
                     }
@@ -68,12 +69,25 @@ int main(){
                         rainPos[col] = 0; titlePos[col] = 0;
                     }
                 }
-                cout << " ";
+            }
+        }
+        for(int row = 0; row < 20; row++){
+            for(int col = 0; col < 20; col++){
+                cout << screen[row][col] << ' ';
             }
             cout << '\n';
         }
         //getchar();
         Sleep(20);
+        for(int row = 0; row < 20; row++){
+            for(int col = 0; col < 20; col++){
+                screen[row][col] = ' ';
+            }
+        }
+        if(completedRain >= 20){
+            completedRain++;
+            if(completedRain == 30) break; 
+        }
         ClrScr();
     }
 }
