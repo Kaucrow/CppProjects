@@ -102,7 +102,7 @@ int main(){
             }
         }
 
-        // *** DELAY THE ANIMATION EXIT
+        // *** DELAY THE ANIMATION EXIT ***
         if(completedRain >= 20){
             completedRain++;
             if(completedRain == 30) break; 
