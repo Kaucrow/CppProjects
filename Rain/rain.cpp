@@ -9,18 +9,30 @@ void ClrScr();
 int main(){
     srand(time(NULL));
     char rain[7] = {'@','%','#','+','=','*','.'};
-    char title[9] = {'h','e','l','l','o','w','r',' ',' '};
+
+    char title[9][20] =    {{' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
+                            {' ',' ',' ',' ',' ','R','a','i','n',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
+                            {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
+                            {' ',' ',' ',' ',' ',' ','A','n','i','m','a','t','i','o','n',' ',' ',' ',' ',' '},
+                            {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
+                            {' ',' ',' ',' ',' ',' ',' ','b','y',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
+                            {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
+                            {' ',' ',' ',' ',' ',' ',' ',' ','K','a','u','c','r','o','w',' ',' ',' ',' ',' '},
+                            {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '}};
+
     char screen[20][20] = {};
     int rainLimit[20], titleLimit[20] = {};             // limit of chars to print of rain and title arrays
     int rainPos[20] = {}, titlePos[20] = {};            // current char being printed from rain or title array
     int rainRow[20];                                    // row where the next rain char will be printed on
     int rainCount[20] = {};                             // amount of rain streaks fallen per column
     int completedRain = 0;                              // amount of columns that have completed their rain cycle
-    int chance = 500;                                   // 
+    int chance = 500;                                   // chance for a new rain streak to appear. 1 in 500 at the start
     bool titleFlag[20] = {};                            // flag for indicating that the title is being printed
     for(int i = 0; i < 20; i++){ rainLimit[i] = 6; rainRow[i] = -1; }
 
     while(true){
+
+        // *** UPDATE THE SCREEN ***
         for(int row = 0; row < 20; row++){
             for(int col = 0; col < 20; col++){
                 
@@ -32,13 +44,13 @@ int main(){
                     }
                     else if(rainCount[col] == 3){ completedRain++; chance -= 2 * completedRain; rainCount[col]++; }
                     // if the title has just been printed, keep printing it on the same position
-                    if(rainCount[col] == 4 && row >= 10 && row <= 16){ screen[row][col] = title[row - 10]; } 
+                    if(rainCount[col] == 4 && row >= 7 && row <= 15){ screen[row][col] = title[row - 7][col]; } 
                 }
 
                 // WHEN TITLE IS ACTIVE
                 if(titleFlag[col] == 1){ 
                     if(row >= rainRow[col] - titleLimit[col] && row < rainRow[col]){
-                        screen[row][col] = title[titlePos[col]];
+                        screen[row][col] = title[titlePos[col]][col];
                         titlePos[col]++;
                     }
                 }
@@ -59,7 +71,7 @@ int main(){
                         if(rainRow[col] >= 13){ rainLimit[col]--; }
                         // if the rainCount is 3 and the starting rainRow is in the range of the title,
                         // increase the amount of title chars to print
-                        if(rainCount[col] == 2 && rainRow[col] >= 11){ titleLimit[col]++; }
+                        if(rainCount[col] == 2 && rainRow[col] >= 8){ titleLimit[col]++; }
                         // if the amount of rain chars is -1, the rain has ended for the curr column
                         if(rainLimit[col] < 0){ 
                             rainRow[col] = -1; rainLimit[col] = 6; rainCount[col]++; 
@@ -71,23 +83,32 @@ int main(){
                 }
             }
         }
+
+        // *** PRINT THE SCREEN ***
         for(int row = 0; row < 20; row++){
             for(int col = 0; col < 20; col++){
                 cout << screen[row][col] << ' ';
             }
             cout << '\n';
         }
+        
         //getchar();
         Sleep(20);
+
+        // *** CLEAR THE SCREEN ***
         for(int row = 0; row < 20; row++){
             for(int col = 0; col < 20; col++){
                 screen[row][col] = ' ';
             }
         }
+
+        // *** DELAY THE ANIMATION EXIT
         if(completedRain >= 20){
             completedRain++;
             if(completedRain == 30) break; 
         }
+
+        // *** CLEAR THE CONSOLE ***
         ClrScr();
     }
 }
