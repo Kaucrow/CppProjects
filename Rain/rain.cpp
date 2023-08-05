@@ -9,22 +9,34 @@ void ClrScr();
 int main(){
     srand(time(NULL));
     char rain[7] = {'@','%','#','+','=','*','.'};
-    int rainLimit = 6, rainPos = -1, rainRow = -1, dice, rainCount = 0;
-    bool rainType;
+    char title[7] = {'h','e','l','l','o','w','r'};
+    int rainLimit = 6, rainPos = -1, rainRow = -1, dice, rainCount = 0, counter = 1, titleLimit = 0;
+    bool rainType, titleFlag = 0;
     
     while(true){
         for(int row = 0; row < 20; row++){
             
             // when rain is inactive 
-            if(rainRow == -1 && rainCount <= 3){
-                dice = 0;               // roll dice
-                if(dice == 0){
-                    rainRow = 0;
-                    rainType = 1;//rand()%2;
+            if(rainRow == -1){
+                if(rainCount <= 3){
+                    dice = 0;               // roll dice
+                    if(dice == 0){
+                        rainRow = 0;
+                        rainType = 1;//rand()%2;
+                    }
                 }
+                else if(row >= 10 && row <= 16){ cout << title[row - 10]; } 
+            }
+            // when title is active
+            if(titleFlag == 1){ 
+                if(row <= rainRow - titleLimit - 1 && rainRow >= 10){
+                    cout << title[titleLimit];
+                    titleLimit++;
+                }
+               // else if(row == )
             }
             // when rain is active
-            if(rainRow == row){ 
+            if(rainRow == row){
                 rainPos++;
                 //if(rainCount == 3 && row == 10){ cout << "HERE"; rainRow++; }                  
                 if(rainPos <= rainLimit){
@@ -42,9 +54,9 @@ int main(){
                     }
                     if(rainLimit < 0){ 
                         rainRow = -1; rainLimit = 6; rainCount++; 
-                        if(rainCount == 3){ cout << "Hello"; }
+                        if(rainCount == 3){ cout << "Hello"; titleFlag = 1;}
                     }
-                    rainPos = -1;
+                    rainPos = -1; titleLimit = 0;
                 }
             }
             //cout << "rainPos: " <<rainPos;
