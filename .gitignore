@@ -1,0 +1,70 @@
+# ==========
+# C++
+# ==========
+
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# ==========
+# CMake
+# ==========
+
+# Compiled Object files
+**/.DS_Store
+
+# CMake exclusive
+**/cmake-build-debug
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/install_manifest.txt
+**/CMakeFiles/
+**/CTestTestfile.cmake
+**/Makefile
+**/*.cbp
+**/CMakeScripts
+**/compile_commands.json
+
+include/divisible/*
+
+# Local 
+
+.idea/*.xml
+
+out/build/**/*
+
+[Bb][Uu][Ii][Ll][Dd]/
+
+include/*
+lib/*
+bin/*
+test/test_runner

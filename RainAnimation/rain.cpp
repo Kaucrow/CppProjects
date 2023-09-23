@@ -92,8 +92,8 @@ int main(){
             cout << '\n';
         }
         
-        //getchar();
-        Sleep(20);
+        getchar();
+        //Sleep(20);
 
         // *** CLEAR THE SCREEN ***
         for(int row = 0; row < 20; row++){
