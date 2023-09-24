@@ -1,33 +1,34 @@
 @echo off
+set workingDir=%~dp0
 set binFileName=hello.exe
+set mainFileName=main.cpp
+set mainFilePath=%workingDir%src\%mainFileName%
 echo\
 
-echo --^> 1: GENERATING MAKEFILE
-if exist .\out\build\ (
-    for /f "delims=" %%i in ('"forfiles /p .\out\build\ /m Makefile /c "cmd /c echo @ftime" "') do set oldMakefModTime=%%i
-)
-cmake -S . -B .\out\build -G "MinGW Makefiles"
-echo\
-if not exist .\out\build\Makefile (
-    echo -- ERR: ^(MAKEF GEN^) THE MAIN MAKEFILE DOES ^NOT EXIST
+if not exist %mainFilePath% (
+    set errMessage=^(BEGIN^) MAIN .CPP FILE "%mainFileName%" WAS ^NOT FOUND
     goto ERR_EXIT
 )
-for /f "delims=" %%i in ('"forfiles /p .\out\build\ /m Makefile /c "cmd /c echo @ftime" "') do if "%oldMakefModTime%"=="%%i" (
-    echo -- ERR: ^(MAKEF GEN^) THE MAIN MAKEFILE COULD ^NOT BE GENERATED
+
+echo --^> 1: GENERATING MAKEFILE
+cmake -S %workingDir% -B %workingDir%out\build -G "MinGW Makefiles"
+echo\
+if ERRORLEVEL 1 (
+    set errMessage=^(MAKEF GEN^) THE MAIN MAKEFILE COULD ^NOT BE GENERATED
     goto ERR_EXIT
 )
 
 echo --^> 2: EXECUTING MAKE
-cd .\out\build\
+cd %workingDir%out\build\
 make
 echo\
-if not exist %binFileName% (
-    echo -- ERR: ^(MAKE EXEC^) BINARY FILE "%binFileName%" DOES ^NOT EXIST
-    goto ERR_EXIT
+if ERRORLEVEL 1 (
+    set errMessage=^(MAKE EXEC^) BINARY FILE "%binFileName%" COULD ^NOT BE BUILT
+    goto ERR_EXIT 
 )
 
 echo --^> 3: DONE
-echo -- Binary "%binFileName%" was built in .\out\build\
+echo -- Binary file "%binFileName%" was built in $^{WORKING_DIR^}\out\build\
 if "%1"=="exec" (
     echo -- Executing compiled binary...
     echo\
@@ -42,6 +43,7 @@ echo\
 exit /b 0
 
 :ERR_EXIT
+echo -- ERR: %errMessage%
 echo -- Terminating execution...
 echo\
 exit /b 1
