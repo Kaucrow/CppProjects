@@ -9,7 +9,7 @@ make
 echo\
 echo *** COMPILATION FINISHED ***
 echo\
-set /p input=Execute the compiled binary? ^(Y/N^): 
+set /p input=Execute the compiled binary? ^(y/n^): 
 if "%input%"=="Y" set execBin=1
 if "%input%"=="y" set execBin=1
 if defined execBin (
