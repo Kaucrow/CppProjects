@@ -7,15 +7,21 @@ echo --^> 2: COMPILING WITH MAKE
 cd ./out/build/
 make
 echo\
-echo *** COMPILATION FINISHED ***
-echo\
-set /p input=Execute the compiled binary? ^(y/n^): 
-if "%input%"=="Y" set execBin=1
-if "%input%"=="y" set execBin=1
-if defined execBin (
-    echo\
-    hello.exe
-    echo\
-    pause
+echo --^> 3: DONE
+echo -- If no errors were thrown, binary was built
+echo    in ./out/build/
+if "%1"=="exec" (
+    if exist ./hello.exe (
+        echo -- Executing compiled binary...
+        echo\
+        hello.exe
+        echo\
+        pause
+    ) else (
+        echo -- ERR: ^(EXEC^) FILE "hello.exe" DOES ^NOT EXIST
+    )
+) else (
+    echo -- You can run "compile.bat" with the "exec"
+    echo    argument to execute the compiled binary
 )
 echo\
