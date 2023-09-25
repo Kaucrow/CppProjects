@@ -13,7 +13,7 @@ if not exist %mainFilePath% (
 echo --^> 1: GENERATING MAKEFILE
 cmake -S %workingDir% -B %workingDir%out\build -G "MinGW Makefiles"
 echo\
-if ERRORLEVEL 1 (
+if ERRORLEVEL NEQ 0 (
     set errMessage=^(MAKEF GEN^) THE MAIN MAKEFILE COULD ^NOT BE GENERATED
     goto ERR_EXIT
 )
@@ -22,7 +22,7 @@ echo --^> 2: EXECUTING MAKE
 cd %workingDir%out\build\
 make
 echo\
-if ERRORLEVEL 1 (
+if ERRORLEVEL NEQ 0 (
     set errMessage=^(MAKE EXEC^) BINARY FILE "%binFileName%" COULD ^NOT BE BUILT
     goto ERR_EXIT 
 )
