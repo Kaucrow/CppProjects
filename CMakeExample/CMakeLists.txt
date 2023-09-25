@@ -20,17 +20,21 @@ if(GIT_FOUND AND EXISTS "${PROJECT_SOURCE_DIR}/.git")
     endif()
 endif()
 
+if(NOT EXISTS "${PROJECT_SOURCE_DIR}/extern/ftxui/CMakeLists.txt")
+    message(FATAL_ERROR "The submodules were not downloaded! GIT_SUBMODULE was turned off or failed. Please update submodules and try again.")
+endif()
+
 add_subdirectory(./src/Adder)
-add_subdirectory(./external/ftxui)
+add_subdirectory(./extern/ftxui)
 
 target_include_directories(${PROJECT_NAME} 
     PUBLIC ./src/Adder
-    PUBLIC ./external/ftxui/include
+    PUBLIC ./extern/ftxui/include
 )
 
 target_link_directories(${PROJECT_NAME}
     PRIVATE ./src/Adder/
-    PRIVATE ./external/ftxui/
+    PRIVATE ./extern/ftxui/
 )
 
 target_link_libraries(${PROJECT_NAME} 
