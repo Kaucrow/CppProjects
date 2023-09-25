@@ -28,7 +28,7 @@ if ERRORLEVEL NEQ 0 (
 )
 
 echo --^> 3: DONE
-echo -- Binary file "%binFileName%" was built in $^{WORKING_DIR^}\out\build\
+echo -- Binary file "%binFileName%" was built for Windows in $^{WORKING_DIR^}\out\build\
 if "%1"=="exec" (
     echo -- Executing compiled binary...
     echo\

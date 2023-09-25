@@ -28,19 +28,19 @@ echo "--> 2: EXECUTING MAKE"
 cd $workingDir/out/build/
 make
 if [ $? -ne 0 ]; then
-    ErrExit "(MAKE EXEC) BINARY FILE "$binFileName" COULD NOT BE BUILT"
+    ErrExit "(MAKE EXEC) BINARY FILE \"$binFileName\" COULD NOT BE BUILT"
 fi
 echo
 
 echo "--> 3: DONE"
-echo -- Binary file \"$binFileName\" was built in \${WORKING_DIR}/out/build/
+echo -- Binary file \"$binFileName\" was built for GNU/Linux in \${WORKING_DIR}/out/build/
 if [ $1 == "exec" 2>/dev/null ]; then
     echo -- Executing compiled binary...
     echo
     ./$binFileName
     echo
 else
-    echo -- You can run \"compile.bat\" with the \"exec\"
+    echo -- You can run \"compile.sh\" with the \"exec\"
     echo "   argument to execute the compiled binary"
 fi
 echo
