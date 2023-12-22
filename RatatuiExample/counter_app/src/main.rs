@@ -78,12 +78,13 @@ fn run() -> Result<()> {
     let mut app = App { counter: 0, should_quit: false };
 
     loop {
+        // Application update
+        update(&mut app)?;
+
         // Application render
         t.draw(|f| {
             ui(&app, f);
         })?;
-        // Application update
-        update(&mut app)?;
 
         // Application exit
         if app.should_quit {
