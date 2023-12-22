@@ -1,44 +1,95 @@
+use crossterm::{
+    event::{self, Event::Key, KeyCode::Char},
+    execute,
+    terminal::{
+        disable_raw_mode, enable_raw_mode, EnterAlternateScreen,
+        LeaveAlternateScreen
+    }
+};
+
 use ratatui::{
-    prelude::{CrosstermBackend, Terminal},
+    prelude::{CrosstermBackend, Terminal, Frame},
     widgets::Paragraph,
 };
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // startup: Enable raw mode for the terminal, giving us fine control over user input
-    crossterm::terminal::enable_raw_mode()?;
-    crossterm::execute!(std::io::stderr(), crossterm::terminal::EnterAlternateScreen)?;
+use anyhow::Result;
 
-    // Initialize the terminal backend using crossterm
-    let mut terminal = Terminal::new(CrosstermBackend::new(std::io::stderr()))?;
+// If not using anyhow:
+//type Err = Box<dyn std::error::Error>;
+//type Result<T> = std::result::Result<T, Err>;
 
-    // Define our counter variable
-    // This is the state of our application
-    let mut counter = 0;
+struct App {
+    counter: i64,
+    should_quit: bool
+}
 
-    // Main application loop
-    loop {
-        // Render the UI
-        terminal.draw(|f| {
-            f.render_widget(Paragraph::new(format!("Counter: {counter}")), f.size());
-        })?;
+fn main() -> Result<()> {
+    // Setup terminal
+    startup()?;
 
-        // Check for user input every 250ms
-        if crossterm::event::poll(std::time::Duration::from_millis(250))? {
-            //If a key event occurs, handle it
-            if let crossterm::event::Event::Key(key) = crossterm::event::read()? {
-                if key.kind == crossterm::event::KeyEventKind::Press {
-                    match key.code {
-                        crossterm::event::KeyCode::Char('j') => counter += 1,
-                        crossterm::event::KeyCode::Char('k') => counter -= 1,
-                        crossterm::event::KeyCode::Char('q') => break,
-                        _ => {} 
-                    }
+    let result = run();
+
+    // Teardown terminal before unwrapping Result of app run
+    shutdown()?;
+
+    result?;
+    
+    Ok(())
+}
+
+fn startup() -> Result<()> {
+    enable_raw_mode()?;
+    execute!(std::io::stderr(), EnterAlternateScreen)?;
+    Ok(())
+}
+
+fn shutdown() -> Result<()> {
+    execute!(std::io::stderr(), LeaveAlternateScreen)?;
+    disable_raw_mode()?;
+    Ok(())
+}
+
+fn ui(app: &App, f: &mut Frame) {
+    f.render_widget(Paragraph::new(format!("Counter: {}", app.counter)), f.size());
+}
+
+fn update(app: &mut App) -> Result<()> {
+    // Check for keypresses every 250ms
+    if event::poll(std::time::Duration::from_millis(250))? {
+        if let Key(key) = event::read()? {
+            if key.kind == event::KeyEventKind::Press {
+                match key.code {
+                    Char('k') => app.counter += 1,
+                    Char('j') => app.counter -= 1,
+                    Char('q') => app.should_quit = true,
+                    _ => {}
                 }
             }
         }
     }
+    Ok(())
+}
 
-    crossterm::execute!(std::io::stderr(), crossterm::terminal::LeaveAlternateScreen)?;
-    crossterm::terminal::disable_raw_mode()?;
+fn run() -> Result<()> {
+    // Ratatui terminal
+    let mut t = Terminal::new(CrosstermBackend::new(std::io::stderr()))?;
+
+    // Application state
+    let mut app = App { counter: 0, should_quit: false };
+
+    loop {
+        // Application render
+        t.draw(|f| {
+            ui(&app, f);
+        })?;
+        // Application update
+        update(&mut app)?;
+
+        // Application exit
+        if app.should_quit {
+            break;
+        }
+    }
+
     Ok(())
 }
