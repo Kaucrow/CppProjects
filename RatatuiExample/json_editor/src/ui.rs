@@ -1,6 +1,6 @@
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Style},
+    style::{Color, Style, Stylize},
     text::{Line, Span, Text},
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
     Frame,
@@ -115,7 +115,7 @@ pub fn ui(f: &mut Frame, app: &App) {
         let popup_block = Block::default()
             .title("Enter a new key-value pair")
             .borders(Borders::NONE)
-            .style(Style::default().bg(Color::DarkGray));
+            .style(Style::default().bg(Color::DarkGray)).fg(Color::White);
 
         let area = centered_rect(60, 25, f.size());
         f.render_widget(popup_block, area);
@@ -144,10 +144,12 @@ pub fn ui(f: &mut Frame, app: &App) {
         };
 
         let key_text = Paragraph::new(app.key_input.clone()).block(key_block);
+        f.render_widget(Clear, popup_chunks[0]);
         f.render_widget(key_text, popup_chunks[0]);
 
         let value_text =
             Paragraph::new(app.value_input.clone()).block(value_block);
+        f.render_widget(Clear, popup_chunks[1]);
         f.render_widget(value_text, popup_chunks[1]);
     }
 
