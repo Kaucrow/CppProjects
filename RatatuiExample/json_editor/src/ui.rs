@@ -143,12 +143,13 @@ pub fn ui(f: &mut Frame, app: &App) {
             }
         };
 
-        let key_text = Paragraph::new(app.key_input.clone()).block(key_block);
+        let key_text =
+            Paragraph::new(app.key_input.clone()).wrap(Wrap { trim: false }).block(key_block);
         f.render_widget(Clear, popup_chunks[0]);
         f.render_widget(key_text, popup_chunks[0]);
 
         let value_text =
-            Paragraph::new(app.value_input.clone()).block(value_block);
+            Paragraph::new(app.value_input.clone()).wrap(Wrap { trim: false }).block(value_block);
         f.render_widget(Clear, popup_chunks[1]);
         f.render_widget(value_text, popup_chunks[1]);
     }
