@@ -1,6 +1,6 @@
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Color, Style, Stylize},
+    style::{Color, Style, Stylize, Modifier},
     text::{Line, Span, Text},
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
     Frame,
@@ -8,7 +8,7 @@ use ratatui::{
 
 use crate::app::{App, CurrentScreen, CurrentlyEditing};
 
-pub fn ui(f: &mut Frame, app: &App) {
+pub fn ui(f: &mut Frame, app: &mut App) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
@@ -35,13 +35,13 @@ pub fn ui(f: &mut Frame, app: &App) {
     for key in app.pairs.keys() {
         list_items.push(ListItem::new(Line::from(Span::styled(
             format!("{: <25} : {}", key, app.pairs.get(key).unwrap()),
-            Style::default().fg(Color::Yellow),
+            Style::default().fg(Color::Yellow)
         ))));
     }
 
-    let list = List::new(list_items);
+    let list = List::new(list_items).highlight_style(Style::default().add_modifier(Modifier::REVERSED));
     
-    f.render_widget(list, chunks[1]);
+    f.render_stateful_widget(list, chunks[1], &mut app.list_state);
 
     let current_navigation_text = vec![
         match app.current_screen {
@@ -122,7 +122,7 @@ pub fn ui(f: &mut Frame, app: &App) {
 
         let popup_chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .margin(1)
+            .vertical_margin(1)
             .constraints([
                 Constraint::Percentage(50),
                 Constraint::Percentage(50),

@@ -82,6 +82,12 @@ fn run_app<B: Backend>(
             }
             match app.current_screen {
                 CurrentScreen::Main => match key.code {
+                    KeyCode::Char('k') => {
+                        app.previous();
+                    }
+                    KeyCode::Char('j') => {
+                        app.next();
+                    }
                     KeyCode::Char('e') => {
                         app.current_screen = CurrentScreen::Editing;
                         app.currently_editing = Some(CurrentlyEditing::Key);

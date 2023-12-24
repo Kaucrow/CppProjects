@@ -1,6 +1,10 @@
 use std::collections::HashMap;
+use std::collections::BTreeMap;
+
+use ratatui::widgets::List;
 
 use anyhow::Result;
+use ratatui::widgets::ListState;
 
 pub enum CurrentScreen {
     Main,
@@ -21,7 +25,7 @@ pub struct App {
     pub value_input: String,
 
     // The representation of our key and value pairs with serde serialize support
-    pub pairs: HashMap<String, String>,
+    pub pairs: BTreeMap<String, String>,
 
     // The current screen the user is looking at, and will later
     // determine what is rendered
@@ -31,17 +35,53 @@ pub struct App {
     // pair the user is editing. It is an option, because when
     // the user is not directly editing a key-value pair, this will be set to `None`
     pub currently_editing: Option<CurrentlyEditing>,
+
+    pub list_state: ListState,
 }
 
 impl App {
     pub fn new() -> App {
+        let mut pairs: BTreeMap<String, String> = BTreeMap::new();
+        for (lower, upper) in ('a'..='z').zip('A'..='Z') {
+            pairs.insert(upper.to_string(), upper.to_string());
+        }
+
         App {
             key_input: String::new(),
             value_input: String::new(),
-            pairs: HashMap::new(),
+            pairs,
             current_screen: CurrentScreen::Main,
             currently_editing: None,
+            list_state: ListState::default(),
         }
+    }
+    
+    pub fn next(&mut self) {
+        let i = match self.list_state.selected() {
+            Some(i) => {
+                if i >= self.pairs.len() - 1 {
+                    0
+                } else {
+                    i + 1
+                }
+            }
+            None => 0,
+        };
+        self.list_state.select(Some(i));
+    }
+
+    pub fn previous(&mut self) {
+        let i = match self.list_state.selected() {
+            Some(i) => {
+                if i == 0 {
+                    self.pairs.len() - 1
+                } else {
+                    i - 1
+                }
+            }
+            None => 0,
+        };
+        self.list_state.select(Some(i));
     }
 
     pub fn save_key_value(&mut self) {
