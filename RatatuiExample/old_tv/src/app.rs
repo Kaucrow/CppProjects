@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::ops::Index;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Dither {

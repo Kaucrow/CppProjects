@@ -29,9 +29,9 @@ use std::fs::File;
 
 use anyhow::Result;
 
-mod app;
+use old_tv::app::{ Ferris, Dither, IndexType, Status };
 
-use app::{ Ferris, Dither, IndexType, Status };
+use old_tv::ui::ui;
 
 fn main() -> Result<()>{
     let data_path = {
@@ -45,7 +45,7 @@ fn main() -> Result<()>{
         path
     };
 
-    let mut ferris = Ferris::new([Dither::Light, Dither::Light, Dither::Normal, Dither::Normal, Dither::Light, Dither::Light]);
+    let mut ferris = Ferris::new([Dither::Light, Dither::Light, Dither::Normal, Dither::Normal, Dither::Light, Dither::Light, Dither::Normal, Dither::Light]);
 
     fn get_ferris_lines<'a>(filepath: &str, ferris: & mut Ferris, light_variant: bool) -> Result<()> {
         let file = File::open(filepath)?;
@@ -56,7 +56,6 @@ fn main() -> Result<()>{
             if light_variant {
                 ferris.light.push(line_unwrapped.clone());
             } else {
-                //ferris.to_draw.insert(ferris.normal.len() as Index, Dither::Normal);
                 ferris.normal.push(line_unwrapped.clone());
             }
             println!("{}", &line_unwrapped);
@@ -64,8 +63,8 @@ fn main() -> Result<()>{
 
         Ok(())
     }
-    get_ferris_lines(&(data_path.clone() + "ferris.txt"), &mut ferris, false).expect("Error reading and writing");
-    get_ferris_lines(&(data_path.clone() + "ferris_light.txt"), &mut ferris, true).expect("Error reading and writing");
+    get_ferris_lines(&(data_path.clone() + "lain.txt"), &mut ferris, false).expect("Error reading and writing");
+    get_ferris_lines(&(data_path.clone() + "lain_light.txt"), &mut ferris, true).expect("Error reading and writing");
 
     if ferris.normal.len() != ferris.light.len() { return Err(anyhow::anyhow!("Normal and light variants must have the same number of lines")) };
 
@@ -75,6 +74,8 @@ fn main() -> Result<()>{
 
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
+
+    terminal.hide_cursor()?;
 
     let res = run_app(&mut terminal, &mut ferris);
 
@@ -99,7 +100,7 @@ fn run_app<B: Backend>(
 
 ) -> Result<()> {
     let mut last_update = Instant::now();
-    let update_rate = Duration::from_millis(250);
+    let update_rate = Duration::from_millis(100);
     let mut should_update = true;
 
     loop {
@@ -127,13 +128,15 @@ fn run_app<B: Backend>(
             }
 
             should_update = false;
-            println!("{:?}", ferris.mask);
+            //println!("{:?}", ferris.mask);
         }
 
 
         if ferris.mask.iter().all(|(_, index)| index == &Status::Done) {
             ferris.mask.iter_mut().for_each(|(_, index)| *index = Status::Ready);
         }
+        
+        terminal.draw(|f| ui(f, ferris))?;
 
         /*if let Event::Key(key) = event::read()? {
             if key.kind == event::KeyEventKind::Release {
@@ -146,7 +149,6 @@ fn run_app<B: Backend>(
                 _ => {}
             }
         }*/
-        //terminal.draw(|f| ui(f, ferris))?;
     }
     Ok(())
 }
