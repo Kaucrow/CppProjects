@@ -5,7 +5,6 @@ use ratatui::{
     },
     Terminal,
 };
-
 use crossterm::{
     event::{
         self,
@@ -21,16 +20,12 @@ use crossterm::{
         LeaveAlternateScreen,
     },
 };
-
-use std::{time::{Instant, Duration}, collections::BTreeMap};
-
+use std::{time::{Instant, Duration}};
+use rand::rngs::OsRng;
 use std::io::{self, BufRead, BufReader};
 use std::fs::File;
-
 use anyhow::Result;
-
 use old_tv::app::{ Image, Dither, IndexType, Status };
-
 use old_tv::ui::ui;
 
 enum ImageVariant {
@@ -52,7 +47,7 @@ fn main() -> Result<()>{
         path
     };
 
-    let mut image = Image::new([]);//[Dither::Light, Dither::Light, Dither::Normal, Dither::Normal, Dither::Light, Dither::Light, Dither::Normal, Dither::Light]);
+    let mut image = Image::new([Dither::Light, Dither::Light, Dither::Normal, Dither::Normal, Dither::Light, Dither::Light, Dither::Normal, Dither::Light]);
 
     fn get_image_lines<'a>(filepath: &str, image: & mut Image, variant: ImageVariant) -> Result<()> {
         let file = File::open(filepath)?;
@@ -63,12 +58,11 @@ fn main() -> Result<()>{
         for line in reader.lines() {
             let line_unwrapped = line?;
             match variant {
-                ImageVariant::Normal => image.normal.push(line_unwrapped.clone()),
-                ImageVariant::Light => image.light.push(line_unwrapped.clone()),
-                ImageVariant::Shift => image.shift.push(line_unwrapped.clone()),
-                ImageVariant::LightShift => image.light_shift.push(line_unwrapped.clone()),
+                ImageVariant::Normal => image.normal.push(line_unwrapped),
+                ImageVariant::Light => image.light.push(line_unwrapped),
+                ImageVariant::Shift => image.shift.push(line_unwrapped),
+                ImageVariant::LightShift => image.light_shift.push(line_unwrapped),
             }
-            println!("{}", &line_unwrapped);
         }
 
         Ok(())
@@ -114,6 +108,14 @@ fn run_app<B: Backend>(
     let mut last_update = Instant::now();
     let update_rate = Duration::from_millis(100);
     let mut should_update = true;
+    
+    let rng = {
+        if image.mask.is_empty() {
+            None
+        } else {
+            Some(OsRng)
+        }
+    };
 
     let mut sinx: u32 = 0;
 
@@ -152,7 +154,6 @@ fn run_app<B: Backend>(
             should_update = false;
             //println!("{:?}", image.mask);
         }
-
 
         if image.mask.iter().all(|(_, index)| index == &Status::Done) {
             image.mask.iter_mut().for_each(|(_, index)| *index = Status::Ready);

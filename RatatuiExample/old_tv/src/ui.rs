@@ -38,7 +38,16 @@ pub fn ui(f: &mut Frame, image: &mut Image) {
             }
         }*/
         let wave_offset = image.wave_offset.get(line_idx as usize).unwrap();
-        offset = *wave_offset / 2;
+        if *wave_offset < 0 {
+            if *wave_offset % 2 == 0 {
+                offset = *wave_offset / 2;
+            } else {
+                offset = (*wave_offset / 2) - 1;
+            }
+        } else {
+            offset = *wave_offset / 2;
+        }
+        //offset = *wave_offset / 2;
         let pos = center + offset;
 
         for (dither, mask_idx) in image.mask.iter() {
@@ -75,6 +84,7 @@ pub fn ui(f: &mut Frame, image: &mut Image) {
         }
 
         //print!("{}, ", *wave_offset);
+        //print!("{}, ", offset);
 
         let render_line = Paragraph::new(Text::styled(
             content.unwrap(),
