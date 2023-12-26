@@ -39,7 +39,7 @@ enum ImageVariant {
 fn main() -> Result<()>{
     let data_path = {
         let mut path = String::from(std::env::current_exe().unwrap().to_string_lossy());
-        path = path[..=path.find("old_tv").expect("could not find `old_tv` folder") + ("old_tv").len()].to_string();
+        path = path[..=path.find("dither_wave").expect("could not find `dither_wave` folder") + ("dither_wave").len()].to_string();
         if cfg!(windows){
             path.push_str("data\\");
         } else {
