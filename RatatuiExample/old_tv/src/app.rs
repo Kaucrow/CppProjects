@@ -15,18 +15,23 @@ pub enum Status {
 
 pub type IndexType = u8;
 
-pub struct Ferris {
+pub struct Image {
     pub normal: Vec<String>,
     pub light: Vec<String>,
-    //pub to_draw: BTreeMap<Index, Dither>,
-    pub mask: Vec<(Dither, Status)>
+    pub shift: Vec<String>,
+    pub light_shift: Vec<String>,
+    pub wave_offset: Vec<i8>,
+    pub mask: Vec<(Dither, Status)>,
 }
 
-impl Ferris {
+impl Image {
     pub fn new<const U: usize>(mask: [Dither; U]) -> Self {
         Self {
             normal: Vec::new(),
             light: Vec::new(),
+            shift: Vec::new(),
+            light_shift: Vec::new(),
+            wave_offset: Vec::new(),
             mask: mask.into_iter().map(|dither| (dither, Status::Ready)).collect(),
         }
     }
