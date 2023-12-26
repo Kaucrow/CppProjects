@@ -8,11 +8,10 @@ use ratatui::{
 use crossterm::{
     event::{
         self,
+        Event as CrosstermEvent,
         EnableMouseCapture,
         DisableMouseCapture,
-        Event,
-        KeyEventKind,
-        KeyCode,
+        KeyEvent,
     },
     execute,
     terminal::{
@@ -20,10 +19,12 @@ use crossterm::{
         LeaveAlternateScreen,
     },
 };
-use std::{time::{Instant, Duration}};
-use rand::{Rng, rngs::ThreadRng, thread_rng};
-use std::io::{self, BufRead, BufReader};
-use std::fs::File;
+use std::{
+    time::{Instant, Duration},
+    io::{self, BufRead, BufReader},
+    fs::File,
+};
+use rand::{Rng, thread_rng};
 use anyhow::Result;
 use old_tv::app::{ Image, Dither, IndexType, Status };
 use old_tv::ui::ui;
@@ -169,17 +170,15 @@ fn run_app<B: Backend>(
         
         terminal.draw(|f| ui(f, image))?;
 
-        /*if let Event::Key(key) = event::read()? {
-            if key.kind == event::KeyEventKind::Release {
-                continue;
-            }
-            match key.code {
-                KeyCode::Char('q') => {
-                    return Ok(());
+        if event::poll(Duration::from_millis(10)).expect("unable to poll for events"){
+            match event::read().expect("unable to read event") {
+                CrosstermEvent::Key(q) => {
+                    if q.kind == event::KeyEventKind::Press {
+                        return Ok(());
+                    }
                 }
                 _ => {}
             }
-        }*/
+        }
     }
-    Ok(())
 }
