@@ -21,7 +21,7 @@ use crossterm::{
     },
 };
 use std::{time::{Instant, Duration}};
-use rand::rngs::OsRng;
+use rand::{Rng, rngs::ThreadRng, thread_rng};
 use std::io::{self, BufRead, BufReader};
 use std::fs::File;
 use anyhow::Result;
@@ -47,7 +47,9 @@ fn main() -> Result<()>{
         path
     };
 
-    let mut image = Image::new([Dither::Light, Dither::Light, Dither::Normal, Dither::Normal, Dither::Light, Dither::Light, Dither::Normal, Dither::Light]);
+    let mut image = Image::new([
+        Dither::Light, Dither::Light, Dither::Light, Dither::Normal, Dither::Normal, Dither::Light, Dither::Light, Dither::Light, Dither::Normal, Dither::Light, Dither::Light
+    ]);
 
     fn get_image_lines<'a>(filepath: &str, image: & mut Image, variant: ImageVariant) -> Result<()> {
         let file = File::open(filepath)?;
@@ -108,12 +110,13 @@ fn run_app<B: Backend>(
     let mut last_update = Instant::now();
     let update_rate = Duration::from_millis(100);
     let mut should_update = true;
-    
-    let rng = {
+
+    let mut dither_timeout: Option<Instant> = None;
+    let mut rng = {
         if image.mask.is_empty() {
             None
         } else {
-            Some(OsRng)
+            Some(thread_rng())
         }
     };
 
@@ -149,14 +152,19 @@ fn run_app<B: Backend>(
             }
             sinx += 1;
 
-            //println!("{:?}", image.wave_offset);
-
             should_update = false;
-            //println!("{:?}", image.mask);
         }
 
-        if image.mask.iter().all(|(_, index)| index == &Status::Done) {
-            image.mask.iter_mut().for_each(|(_, index)| *index = Status::Ready);
+        if image.mask.iter().all(|(_, index)| index == &Status::Done) && dither_timeout.is_none() {
+            let timeout = rng.as_mut().unwrap().gen_range(1000..=3000);
+            dither_timeout = Some(Instant::now() + Duration::from_millis(timeout));//rng.as_mut().unwrap().gen_range(1001..=3000)));
+        }
+
+        if let Some(timeout) = dither_timeout {
+            if Instant::now() > timeout {
+                image.mask.iter_mut().for_each(|(_, index)| *index = Status::Ready);
+                dither_timeout = None;
+            }
         }
         
         terminal.draw(|f| ui(f, image))?;
