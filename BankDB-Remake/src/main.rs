@@ -9,11 +9,11 @@ mod ui;
 use anyhow::Result; 
 use sqlx::{ Row, Connection };
 use ratatui::{ backend::CrosstermBackend, Terminal };
-use model::App;
+use model::{App, InputMode};
 use update::update;
 use event::{ Event, EventHandler };
 use tui::Tui;
-use std::{sync::{Arc, Mutex}, os::windows::thread};
+use std::sync::{Arc, Mutex};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -42,10 +42,10 @@ async fn main() -> Result<()> {
 
     while !app_arc.lock().unwrap().should_quit {
         tui.draw(&mut app_arc)?;
-        //println!("{}", counter);
-        //counter += 1;
         if let Ok(event) = tui.events.next() {
-            update(&mut app_arc, &pool, event).await?;
+            //println!("{}", counter);
+            //counter += 1;
+            update(&mut app_arc, &pool, event).await.unwrap_or_else(|error| panic!("{}", error));
         }
     }
 

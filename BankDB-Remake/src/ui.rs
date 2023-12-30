@@ -87,8 +87,18 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
 
             f.render_widget(input, chunks[2]);
             
+            let help_text = {
+                if app_lock.failed_logins == 3 {
+                    Text::from(format!("Login failed - Try again in: {}", app_lock.timer_counter.unwrap()))
+                }
+                else if app_lock.failed_logins > 0 {
+                    Text::from("Login failed")
+                } else {
+                    Text::from("Press `Alt` to switch input")
+                }
+            };
             let help_block = Block::default();
-            let help = Paragraph::new(Text::from("Press `Alt` to switch input")).block(help_block);
+            let help = Paragraph::new(help_text).block(help_block);
             f.render_widget(help, chunks[3]);
         },
     }

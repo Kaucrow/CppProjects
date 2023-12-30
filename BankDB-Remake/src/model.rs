@@ -32,17 +32,22 @@ pub struct App {
     //pub pool: Pool<Postgres>,
     pub input: InputFields,
     pub input_mode: InputMode,
+    pub failed_logins: u8,
+    pub timer_counter: Option<u8>,
+    pub timer_step: Option<Instant>,
     pub resize_timeout: Instant,
     pub curr_screen: Screen,
     pub should_quit: bool,
 }
 
 impl App {
-    pub fn new(/*pool: Pool<Postgres>*/) -> Self {
+    pub fn new() -> Self {
         App {
-            //pool,
             input: InputFields(Input::default(), Input::default()),
             input_mode: InputMode::Normal,
+            failed_logins: 0,
+            timer_counter: None,
+            timer_step: None,
             resize_timeout: Instant::now(),
             curr_screen: Screen::Login,
             should_quit: false,
@@ -54,6 +59,7 @@ impl App {
             Screen::Login => {
                 self.curr_screen = Screen::Login;
                 self.input_mode = InputMode::Editing(0);
+                self.failed_logins = 0;
                 self.input.0.reset();
                 self.input.1.reset();
             }

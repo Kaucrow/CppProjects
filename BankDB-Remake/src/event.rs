@@ -25,6 +25,7 @@ pub enum Event {
     Key(KeyEvent),
     SwitchInput,
     Resize,
+    TimerStep,
 }
 
 #[derive(Debug)]
@@ -48,17 +49,25 @@ impl EventHandler {
         let handler = {
             let sender = sender.clone();
             thread::spawn(move || {
-                let mut last_tick = Instant::now();
+                //let mut last_tick = Instant::now();
                 loop {
-                    let timeout = tick_rate
+                    /*let timeout = tick_rate
                         .checked_sub(last_tick.elapsed())
-                        .unwrap_or(tick_rate);
+                        .unwrap_or(tick_rate);*/
 
-                    event_act(event::read().expect("unable to read event"), &sender, &app_arc);
-
-                    if last_tick.elapsed() >= tick_rate {
-                        last_tick = Instant::now();
+                    if event::poll(Duration::from_millis(100)).unwrap() {
+                        event_act(event::read().expect("unable to read event"), &sender, &app_arc);
                     }
+                    
+                    if let Some(step) = app_arc.lock().unwrap().timer_step {
+                        if Instant::now() > step {
+                            sender.send(Event::TimerStep).expect("could not send terminal event");
+                        }
+                    }
+
+                    /*if last_tick.elapsed() >= tick_rate {
+                        last_tick = Instant::now();
+                    }*/
                 }
             })
         };
@@ -94,7 +103,7 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                 _ => {}
             }
         },
-        CrosstermEvent::Resize(x, y) => {
+        CrosstermEvent::Resize(_, _) => {
             let mut app_lock = app.lock().unwrap();
             if Instant::now() > app_lock.resize_timeout {
                 app_lock.resize_timeout = Instant::now() + Duration::from_millis(150);
