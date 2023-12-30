@@ -4,7 +4,7 @@ use crossterm::event::{
     KeyEventKind,
     KeyCode,
     KeyEvent,
-    MouseEvent, KeyModifiers,
+    KeyModifiers,
 };
 
 use std::{
@@ -13,19 +13,19 @@ use std::{
     time::{Duration, Instant}
 };
 
-use anyhow::{ Result, Error };
+use anyhow::Result;
 
-use crate::model::{ App, Screen };
+use crate::model::{App, Screen, TimeoutType};
 
 /// Terminal events
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug)]
 pub enum Event {
     Quit,
     TryLogin,
     Key(KeyEvent),
     SwitchInput,
     Resize,
-    TimerStep,
+    TimeoutStep(TimeoutType),
 }
 
 #[derive(Debug)]
@@ -42,32 +42,27 @@ pub struct EventHandler {
 
 impl EventHandler {
     // Constructs a new instance of [`EventHandler`]
-    pub fn new(tick_rate: u64, app_arc: &Arc<Mutex<App>>) -> Self {
-        let tick_rate = Duration::from_millis(tick_rate);
+    pub fn new(tick_step: u16, app_arc: &Arc<Mutex<App>>) -> Self {
+        let tick_rate = Duration::from_millis(tick_step as u64);
         let (sender, receiver) = mpsc::channel();
         let app_arc = Arc::clone(&app_arc);
         let handler = {
             let sender = sender.clone();
             thread::spawn(move || {
-                //let mut last_tick = Instant::now();
+                let mut last_tick = Instant::now(); 
                 loop {
-                    /*let timeout = tick_rate
-                        .checked_sub(last_tick.elapsed())
-                        .unwrap_or(tick_rate);*/
-
                     if event::poll(Duration::from_millis(100)).unwrap() {
                         event_act(event::read().expect("unable to read event"), &sender, &app_arc);
                     }
                     
-                    if let Some(step) = app_arc.lock().unwrap().timer_step {
-                        if Instant::now() > step {
-                            sender.send(Event::TimerStep).expect("could not send terminal event");
+                    if last_tick.elapsed() >= tick_rate {
+                        last_tick = Instant::now();
+                        for (timeout_type, timer) in &app_arc.lock().unwrap().timeout {
+                            if timer.last_update.elapsed() > timer.tick_rate {
+                                sender.send(Event::TimeoutStep(*timeout_type)).expect("could not send terminal event");
+                            }
                         }
                     }
-
-                    /*if last_tick.elapsed() >= tick_rate {
-                        last_tick = Instant::now();
-                    }*/
                 }
             })
         };
@@ -105,8 +100,8 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
         },
         CrosstermEvent::Resize(_, _) => {
             let mut app_lock = app.lock().unwrap();
-            if Instant::now() > app_lock.resize_timeout {
-                app_lock.resize_timeout = Instant::now() + Duration::from_millis(150);
+            if !app_lock.timeout.contains_key(&TimeoutType::Resize) {
+                app_lock.add_timeout(1, 250, TimeoutType::Resize);
                 sender.send( Event::Resize )
             } else {
                 Ok(())

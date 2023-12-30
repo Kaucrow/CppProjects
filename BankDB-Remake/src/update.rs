@@ -1,11 +1,11 @@
 //use crossterm::event::{Event as CrosstermEvent, KeyEventKind, KeyCode, KeyEvent, KeyModifiers};
-use crossterm::event::{Event as CrosstermEvent, KeyEvent};
-use std::{time::{Duration, Instant}, sync::{Arc, Mutex}};
+use crossterm::event::Event as CrosstermEvent;
+use std::sync::{Arc, Mutex};
 use tui_input::backend::crossterm::EventHandler;
-use sqlx::{Row, Pool, Postgres, Executor};
+use sqlx::{Row, Pool, Postgres};
 use anyhow::Result;
 
-use crate::model::{App, InputMode};
+use crate::model::{App, InputMode, TimeoutType};
 use crate::event::Event;
 
 pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Event) -> Result<()> {
@@ -14,21 +14,8 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             app.lock().unwrap().should_quit = true;
             Ok(())
         },
-        Event::TimerStep => {
-            let mut app_lock = app.lock().unwrap();
-            if let (Some(counter), Some(step)) = (app_lock.timer_counter, app_lock.timer_step) {
-                if Instant::now() > step {
-                    if counter == 0 {
-                        app_lock.timer_counter = None;
-                        app_lock.timer_step = None;
-                        app_lock.failed_logins = 0;
-                    } else {
-                        app_lock.timer_counter = Some(counter - 1);
-                        // Since the event polling timeout is 100ms, the minimum effective timer_step duration is 100ms
-                        app_lock.timer_step = Some(Instant::now() + Duration::from_millis(1000));
-                    }
-                }
-            }
+        Event::TimeoutStep(timeout_type) => {
+            app.lock().unwrap().update_timeout_counter(timeout_type);
             Ok(())
         },
         Event::TryLogin => {
@@ -55,8 +42,7 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             app_lock.failed_logins += 1;
             
             if app_lock.failed_logins == 3 {
-                app_lock.timer_counter = Some(30);
-                app_lock.timer_step = Some(Instant::now() + Duration::from_millis(1000));
+                app_lock.add_timeout(30, 1000, TimeoutType::Login);
             }
             Ok(())
         },

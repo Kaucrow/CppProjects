@@ -7,11 +7,10 @@ mod tui;
 mod ui;
 
 use anyhow::Result; 
-use sqlx::{ Row, Connection };
 use ratatui::{ backend::CrosstermBackend, Terminal };
-use model::{App, InputMode};
+use model::App;
 use update::update;
-use event::{ Event, EventHandler };
+use event::EventHandler;
 use tui::Tui;
 use std::sync::{Arc, Mutex};
 
@@ -38,14 +37,15 @@ async fn main() -> Result<()> {
     //println!("{}", sum);
     app_arc.lock().unwrap().change_screen(model::Screen::Login);
 
-    let mut counter = 0;
+    let mut _counter = 0;
+    tui.draw(&mut app_arc)?;
 
     while !app_arc.lock().unwrap().should_quit {
-        tui.draw(&mut app_arc)?;
         if let Ok(event) = tui.events.next() {
-            //println!("{}", counter);
-            //counter += 1;
+            //println!("{}", _counter);
+            //_counter += 1;
             update(&mut app_arc, &pool, event).await.unwrap_or_else(|error| panic!("{}", error));
+            tui.draw(&mut app_arc)?;
         }
     }
 

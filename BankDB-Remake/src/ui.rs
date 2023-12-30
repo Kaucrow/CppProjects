@@ -6,7 +6,7 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Paragraph}
 };
 use std::sync::{Arc, Mutex};
-use crate::model::{ App, Screen, InputMode };
+use crate::model::{ App, Screen, InputMode, TimeoutType };
 
 pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
     let app_lock = app.lock().unwrap();
@@ -89,7 +89,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
             
             let help_text = {
                 if app_lock.failed_logins == 3 {
-                    Text::from(format!("Login failed - Try again in: {}", app_lock.timer_counter.unwrap()))
+                    Text::from(format!("Login failed - Try again in: {}", app_lock.timeout.get(&TimeoutType::Login).unwrap().counter))
                 }
                 else if app_lock.failed_logins > 0 {
                     Text::from("Login failed")
