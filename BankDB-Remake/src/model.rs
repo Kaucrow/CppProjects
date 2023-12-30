@@ -20,21 +20,16 @@ pub enum Screen {
 
 pub enum InputMode {
     Normal,
-    Editing,
+    /// The value represents the InputField being edited
+    Editing(u8),
 }
 
-/// Holds the state of input
-pub struct InputData {
-    /// Current value of the input box
-    pub value: Input,
-    /// Current input mode
-    pub mode: InputMode,
-    /// Last message recorded
-    pub message: String,
-}
+pub struct InputFields(pub Input, pub Input);
 
 pub struct App {
-    pub input: InputData,
+    //pub input: InputData,
+    pub input: InputFields,
+    pub input_mode: InputMode,
     pub curr_screen: Screen,
     pub should_quit: bool,
 }
@@ -42,11 +37,12 @@ pub struct App {
 impl App {
     pub fn new() -> Self {
         App {
-            input: InputData {
-                value: Input::default(),
+            /*input: InputData {
+                input: Input::default(),
                 mode: InputMode::Normal,
-                message: String::new(),
-            },
+            },*/
+            input: InputFields(Input::default(), Input::default()),
+            input_mode: InputMode::Normal,
             curr_screen: Screen::Login,
             should_quit: false,
         }
@@ -56,8 +52,9 @@ impl App {
         match screen {
             Screen::Login => {
                 self.curr_screen = Screen::Login;
-                self.input.mode = InputMode::Editing;
-                self.input.message.clear();
+                self.input_mode = InputMode::Editing(0);
+                self.input.0.reset();
+                self.input.1.reset();
             }
             _ => { unimplemented!() }
         }

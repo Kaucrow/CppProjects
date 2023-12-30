@@ -17,7 +17,7 @@ use std::sync::{Arc, Mutex};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut app = App::new();
+    let app = App::new();
     let mut app_arc = Arc::new(Mutex::new(app));
 
     let backend = CrosstermBackend::new(std::io::stderr());
@@ -40,7 +40,9 @@ async fn main() -> Result<()> {
 
     while !app_arc.lock().unwrap().should_quit {
         tui.draw(&mut app_arc)?;
-        update(&mut app_arc, tui.events.next()?);
+        if let Ok(event) = tui.events.next() {
+            update(&mut app_arc, event);
+        }
     }
 
     tui.exit()?;

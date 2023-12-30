@@ -6,7 +6,7 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Paragraph}
 };
 use std::sync::{Arc, Mutex};
-use crate::model::{ App, Screen };
+use crate::model::{ App, Screen, InputMode };
 
 pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
     let app_lock = app.lock().unwrap();
@@ -16,12 +16,12 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([
-                    Constraint::Min(1),
-                    Constraint::Min(3),
-                    Constraint::Min(3),
-                    Constraint::Max(999),
+                    Constraint::Length(1),
+                    Constraint::Length(3),
+                    Constraint::Length(3),
+                    Constraint::Length(1),
                 ])
-                .split(centered_rect(25, 40, f.size()));
+                .split(centered_rect(25, (8.0 / f.size().height as f32 * 100.0 + 1.0) as u16, f.size()));
             
             let title_block = Block::default();
 
@@ -34,47 +34,62 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
             f.render_widget(title, chunks[0]);
 
             let width = chunks[0].width.max(3) - 3;
-            let scroll = app_lock.input.value.visual_scroll(width as usize - "* Name: ".len());
+            let name_scroll = app_lock.input.0.visual_scroll(width as usize - "* Name: ".len());
+            let password_scroll = app_lock.input.1.visual_scroll(width as usize - "* Password: ".len());
+            let mut name_style = Style::default();
+            let mut password_style = Style::default();
+            
+            if let InputMode::Editing(field) = app_lock.input_mode {
+                if field == 0 {
+                    password_style = password_style.fg(Color::DarkGray);
+                    f.set_cursor(chunks[1].x
+                                    + ((app_lock.input.0.visual_cursor()).max(name_scroll) - name_scroll) as u16
+                                    + "* Name: ".len() as u16
+                                    + 1,
+                                chunks[1].y + 1,
+                                );
+                } else {
+                    name_style = password_style.fg(Color::DarkGray);
+                    f.set_cursor(chunks[2].x
+                                    + ((app_lock.input.1.visual_cursor()).max(password_scroll) - password_scroll) as u16
+                                    + "* Password: ".len() as u16
+                                    + 1,
+                                chunks[2].y + 1,
+                                );
+                }
+            }
             
             let name_block = Block::default()
                 .borders(Borders::ALL)
-                .border_type(BorderType::Rounded);
+                .border_type(BorderType::Rounded)
+                .border_style(name_style);
 
             let input = Paragraph::new(Text::from(Line::from(vec![
                 Span::styled("* Name: ", Style::default().fg(Color::Yellow)),
-                Span::raw(app_lock.input.value.value().to_string())
+                Span::styled(app_lock.input.0.value().to_string(), name_style)
             ])))
             .block(name_block)
-            .scroll((0, scroll as u16));
+            .scroll((0, name_scroll as u16));
 
             f.render_widget(input, chunks[1]);
-
-            f.set_cursor(chunks[1].x
-                            + ((app_lock.input.value.visual_cursor()).max(scroll) - scroll) as u16
-                            + "* Name: ".len() as u16
-                            + 1,
-                        chunks[1].y + 1,
-                        );
-            /*
+            
             let password_block = Block::default()
                 .borders(Borders::ALL)
-                .border_type(BorderType::Rounded);
+                .border_type(BorderType::Rounded)
+                .border_style(password_style);
 
             let input = Paragraph::new(Text::from(Line::from(vec![
                 Span::styled("* Password: ", Style::default().fg(Color::Yellow)),
-                Span::raw(app_lock.input.value.value().to_string())
+                Span::styled(app_lock.input.1.value().to_string(), password_style)
             ])))
             .block(password_block)
-            .scroll((0, scroll as u16));
+            .scroll((0, password_scroll as u16));
 
             f.render_widget(input, chunks[2]);
-
-            f.set_cursor(chunks[2].x
-                            + ((app_lock.input.value.visual_cursor()).max(scroll) - scroll) as u16
-                            + "* Password: ".len() as u16
-                            + 1,
-                        chunks[2].y + 1,
-                        );*/
+            
+            let help_block = Block::default();
+            let help = Paragraph::new(Text::from("Press `Alt` to switch input")).block(help_block);
+            f.render_widget(help, chunks[3]);
         },
     }
 }

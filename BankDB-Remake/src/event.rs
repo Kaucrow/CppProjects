@@ -23,6 +23,8 @@ pub enum Event {
     Quit,
     TryLogin,
     Key(KeyEvent),
+    SwitchInput,
+    Resize,
 }
 
 #[derive(Debug)]
@@ -87,12 +89,16 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                     match key_event.code {
                         KeyCode::Char('c') if key_event.modifiers == KeyModifiers::CONTROL => { sender.send(Event::Quit) },
                         KeyCode::Enter => { sender.send(Event::TryLogin) }
+                        KeyCode::Tab => { sender.send(Event::SwitchInput) }
                         _ => { sender.send(Event::Key(key_event)) }
                     }.expect("could not send terminal event");
                 }
                 _ => {}
             }
-        }
+        },
+        CrosstermEvent::Resize(x, y) => {
+            sender.send( Event::Resize )
+        }.expect("could not send terminal event"),
         _ => {}
     }
 }
