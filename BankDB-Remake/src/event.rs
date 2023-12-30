@@ -54,9 +54,7 @@ impl EventHandler {
                         .checked_sub(last_tick.elapsed())
                         .unwrap_or(tick_rate);
 
-                    if event::poll(timeout).expect("unable to poll for event") {
-                        event_act(event::read().expect("unable to read event"), &sender, &app_arc);
-                    }
+                    event_act(event::read().expect("unable to read event"), &sender, &app_arc);
 
                     if last_tick.elapsed() >= tick_rate {
                         last_tick = Instant::now();
@@ -97,7 +95,13 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
             }
         },
         CrosstermEvent::Resize(x, y) => {
-            sender.send( Event::Resize )
+            let mut app_lock = app.lock().unwrap();
+            if Instant::now() > app_lock.resize_timeout {
+                app_lock.resize_timeout = Instant::now() + Duration::from_millis(150);
+                sender.send( Event::Resize )
+            } else {
+                Ok(())
+            }
         }.expect("could not send terminal event"),
         _ => {}
     }
