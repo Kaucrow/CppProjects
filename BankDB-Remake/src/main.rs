@@ -36,10 +36,10 @@ async fn main() -> Result<()> {
     //let sum: i32 = res.get("sum");
 
     //println!("{}", sum);
-
-    tui.draw(&mut app_arc)?;
+    app_arc.lock().unwrap().change_screen(model::Screen::Login);
 
     while !app_arc.lock().unwrap().should_quit {
+        tui.draw(&mut app_arc)?;
         update(&mut app_arc, tui.events.next()?);
     }
 

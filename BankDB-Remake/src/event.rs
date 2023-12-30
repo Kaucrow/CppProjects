@@ -4,7 +4,7 @@ use crossterm::event::{
     KeyEventKind,
     KeyCode,
     KeyEvent,
-    MouseEvent,
+    MouseEvent, KeyModifiers,
 };
 
 use std::{
@@ -20,15 +20,9 @@ use crate::model::{ App, Screen };
 /// Terminal events
 #[derive(Clone, Copy, Debug)]
 pub enum Event {
-    // Terminal tick
-    //Tick,
-    // Key press
-    //Key(KeyEvent),
-    // Mouse click/scroll
-    //Mouse(MouseEvent),
-    // Terminal resize
-    //Resize(u16, u16),
     Quit,
+    TryLogin,
+    Key(KeyEvent),
 }
 
 #[derive(Debug)]
@@ -91,8 +85,9 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
             match app.lock().unwrap().curr_screen {
                 Screen::Login => {
                     match key_event.code {
-                        KeyCode::Char('q') => { sender.send(Event::Quit) },
-                        _ => { Ok(()) }
+                        KeyCode::Char('c') if key_event.modifiers == KeyModifiers::CONTROL => { sender.send(Event::Quit) },
+                        KeyCode::Enter => { sender.send(Event::TryLogin) }
+                        _ => { sender.send(Event::Key(key_event)) }
                     }.expect("could not send terminal event");
                 }
                 _ => {}

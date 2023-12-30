@@ -51,8 +51,15 @@ impl App {
             should_quit: false,
         }
     }
-
-    pub fn quit(&mut self) {
-        self.should_quit = true;
+ 
+    pub fn change_screen(&mut self, screen: Screen) {
+        match screen {
+            Screen::Login => {
+                self.curr_screen = Screen::Login;
+                self.input.mode = InputMode::Editing;
+                self.input.message.clear();
+            }
+            _ => { unimplemented!() }
+        }
     }
 }

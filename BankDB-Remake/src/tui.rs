@@ -10,7 +10,7 @@ use crossterm::{
 
 use anyhow::Result;
 
-use crate::{model::App, event::EventHandler, ui};
+use crate::{model::{App, Screen}, event::EventHandler, ui};
 
 pub type CrosstermTerminal =
     ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stderr>>;
