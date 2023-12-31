@@ -8,7 +8,7 @@ mod ui;
 
 use anyhow::Result; 
 use ratatui::{ backend::CrosstermBackend, Terminal };
-use model::App;
+use model::app::{App, Screen};
 use update::update;
 use event::EventHandler;
 use tui::Tui;
@@ -28,16 +28,10 @@ async fn main() -> Result<()> {
     let mut tui = Tui::new(terminal, events);
     tui.enter()?;
 
-    /*let res = sqlx::query("SELECT 1 + 1 as sum")
-        .fetch_one(&pool)
-        .await?;*/
-
-    //let sum: i32 = res.get("sum");
-
-    //println!("{}", sum);
-    app_arc.lock().unwrap().change_screen(model::Screen::Login);
+    app_arc.lock().unwrap().change_screen(Screen::Login);
 
     let mut _counter = 0;
+
     tui.draw(&mut app_arc)?;
 
     while !app_arc.lock().unwrap().should_quit {

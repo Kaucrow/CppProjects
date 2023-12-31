@@ -2,12 +2,19 @@ use crossterm::event::Event as CrosstermEvent;
 use std::sync::{Arc, Mutex};
 use tui_input::backend::crossterm::EventHandler;
 use sqlx::{Row, Pool, Postgres, FromRow};
-use rust_decimal::Decimal;
 use bcrypt::verify;
 use anyhow::Result;
-
-use crate::model::{App, InputMode, TimeoutType, Client, AccountType, Transaction};
-use crate::event::Event;
+use crate::{
+    event::Event,
+    model::{
+        app::{
+            App,
+            InputMode,
+            TimeoutType,
+        },
+        client::Client,
+    }
+};
 
 pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Event) -> Result<()> {
     match event {
@@ -34,43 +41,15 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
                     let password_hash: String = res.try_get("password")?;
 
                     if verify(&password, &password_hash).unwrap_or_else(|error| panic!("{}", error)) {
-                        //todo!("[ LOGIN SUCCESSFUL ] Name: {res_name}, Password: {password}");
-                        app.lock().unwrap().active_user = {
-                            let balance: Decimal = res.try_get("balance")?;
-                            let account_type: String = res.try_get("account_type")?;
-                            let last_transaction: Option<String> = res.try_get("last_transaction")?;
-                            Some(Client {
-                                account_number: res.try_get("account_number")?,
-                                username,
-                                name: res.try_get("name")?,
-                                ci: res.try_get("ci")?,
-                                balance,
-                                account_type: {
-                                    if account_type == "current" {
-                                        AccountType::Current
-                                    } else {
-                                        AccountType::Debit
-                                    }
-                                },
-                                last_transaction: {
-                                    if last_transaction.is_some() {
-                                        Some(Transaction::from_row(&sqlx::query(
-                                            "SELECT * FROM transactions WHERE username = $1")
-                                                .bind(&last_transaction.unwrap())
-                                                .fetch_one(pool)
-                                                .await?)?
-                                            )
-                                    } else {
-                                        None
-                                    }
-                                },    
-                                suspended: res.try_get("suspended")?,
-                            })
-                        };
-                        todo!("login successful, but not yet implemented");
+                        let mut app_lock = app.lock().unwrap();
+                        app_lock.active_user = Some(Client::from_row(&res)?);
+                        app_lock.active_user.as_mut().unwrap().update_transaction(pool).await?;
+
+                        todo!("login successful, but not yet implemented. USER: {:?}", app_lock.active_user);
                         return Ok(());
                     }
                 }
+
             let mut app_lock = app.lock().unwrap();
             app_lock.failed_logins += 1;
             

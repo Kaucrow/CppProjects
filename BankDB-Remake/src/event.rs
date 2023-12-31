@@ -6,16 +6,17 @@ use crossterm::event::{
     KeyEvent,
     KeyModifiers,
 };
-
 use std::{
     sync::{mpsc, Arc, Mutex},
     thread,
     time::{Duration, Instant}
 };
-
 use anyhow::Result;
-
-use crate::model::{App, Screen, TimeoutType};
+use crate::model::app::{
+    App,
+    Screen,
+    TimeoutType
+};
 
 /// Terminal events
 #[derive(Debug)]

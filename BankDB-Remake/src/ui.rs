@@ -6,7 +6,12 @@ use ratatui::{
     widgets::{Block, BorderType, Borders, Paragraph}
 };
 use std::sync::{Arc, Mutex};
-use crate::model::{ App, Screen, InputMode, TimeoutType };
+use crate::model::app::{
+    App,
+    Screen,
+    InputMode,
+    TimeoutType
+};
 
 pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
     let app_lock = app.lock().unwrap();

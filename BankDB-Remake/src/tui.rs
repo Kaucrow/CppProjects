@@ -1,16 +1,17 @@
+use anyhow::Result;
 use std::{
     sync::{Arc, Mutex},
     io, panic
 };
-
 use crossterm::{
     event::{DisableMouseCapture, EnableMouseCapture},
     terminal::{self, EnterAlternateScreen, LeaveAlternateScreen},
 };
-
-use anyhow::Result;
-
-use crate::{model::App, event::EventHandler, ui};
+use crate::{
+    model::app::App,
+    event::EventHandler,
+    ui
+};
 
 pub type CrosstermTerminal =
     ratatui::Terminal<ratatui::backend::CrosstermBackend<std::io::Stderr>>;
