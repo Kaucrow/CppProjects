@@ -1,11 +1,12 @@
-//use crossterm::event::{Event as CrosstermEvent, KeyEventKind, KeyCode, KeyEvent, KeyModifiers};
 use crossterm::event::Event as CrosstermEvent;
 use std::sync::{Arc, Mutex};
 use tui_input::backend::crossterm::EventHandler;
-use sqlx::{Row, Pool, Postgres};
+use sqlx::{Row, Pool, Postgres, FromRow};
+use rust_decimal::Decimal;
+use bcrypt::verify;
 use anyhow::Result;
 
-use crate::model::{App, InputMode, TimeoutType};
+use crate::model::{App, InputMode, TimeoutType, Client, AccountType, Transaction};
 use crate::event::Event;
 
 pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Event) -> Result<()> {
@@ -23,21 +24,53 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
                 return Ok(());
             }
 
-            let name: String = app.lock().unwrap().input.0.value().to_string();
+            let username: String = app.lock().unwrap().input.0.value().to_string();
             let password: String = app.lock().unwrap().input.1.value().to_string();
 
-            if let Some(res) = sqlx::query("SELECT name, password FROM clients WHERE LOWER(name) = LOWER($1)")
-                .bind(&name)
+            if let Some(res) = sqlx::query("SELECT * FROM clients WHERE username = $1")
+                .bind(&username)
                 .fetch_optional(pool)
                 .await? {
-                    let res_name: String = res.try_get("name")?;
-                    let res_password: String = res.try_get("password")?;
-                    if password == res_password {
-                        todo!("[ LOGIN SUCCESSFUL ] Name: {res_name}, Password: {res_password}");
+                    let password_hash: String = res.try_get("password")?;
+
+                    if verify(&password, &password_hash).unwrap_or_else(|error| panic!("{}", error)) {
+                        //todo!("[ LOGIN SUCCESSFUL ] Name: {res_name}, Password: {password}");
+                        app.lock().unwrap().active_user = {
+                            let balance: Decimal = res.try_get("balance")?;
+                            let account_type: String = res.try_get("account_type")?;
+                            let last_transaction: Option<String> = res.try_get("last_transaction")?;
+                            Some(Client {
+                                account_number: res.try_get("account_number")?,
+                                username,
+                                name: res.try_get("name")?,
+                                ci: res.try_get("ci")?,
+                                balance,
+                                account_type: {
+                                    if account_type == "current" {
+                                        AccountType::Current
+                                    } else {
+                                        AccountType::Debit
+                                    }
+                                },
+                                last_transaction: {
+                                    if last_transaction.is_some() {
+                                        Some(Transaction::from_row(&sqlx::query(
+                                            "SELECT * FROM transactions WHERE username = $1")
+                                                .bind(&last_transaction.unwrap())
+                                                .fetch_one(pool)
+                                                .await?)?
+                                            )
+                                    } else {
+                                        None
+                                    }
+                                },    
+                                suspended: res.try_get("suspended")?,
+                            })
+                        };
+                        todo!("login successful, but not yet implemented");
                         return Ok(());
                     }
                 }
-            
             let mut app_lock = app.lock().unwrap();
             app_lock.failed_logins += 1;
             

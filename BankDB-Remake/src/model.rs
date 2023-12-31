@@ -1,19 +1,71 @@
 use tui_input::Input;
 use std::time::{Instant, Duration};
 use std::collections::HashMap;
+use rust_decimal::Decimal;
+use sqlx::{postgres::PgRow, Row, FromRow};
 
 pub enum AccountType {
     Debit,
     Current,
 }
 
+pub struct Transfer {
+    amount: Decimal,
+    recipient: String,
+}
+
+pub enum Transaction {
+    Deposit(Decimal),
+    Withdraw(Decimal),
+    Transfer(Transfer),
+}
+
+impl<'r> FromRow<'r, PgRow> for Transaction {
+    fn from_row(row: &'r PgRow) -> Result<Self, sqlx::Error> {
+        let amount: Decimal = row.try_get("amount")?;
+        let recipient: Option<String> = row.try_get("recipient")?;
+        match row.try_get("operation")? {
+            "deposit" => Ok(Transaction::Deposit(amount)),
+            "withdraw" => Ok(Transaction::Withdraw(amount)),
+            "transfer" => Ok(Transaction::Transfer(Transfer {
+                amount,
+                recipient: recipient.unwrap_or("recipient not found".to_string()),
+            })),
+            _ => Err(sqlx::Error::Decode(Box::new(sqlx::error::Error::ColumnDecode {
+                index: "operation".to_string(),
+                source: Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "invalid operation type"
+                ))
+            })))
+        }
+    }
+}
+
 pub struct Client {
-    ci: u32,
-    name: String,
-    password: String,
-    account_number: u32,
-    account_type: AccountType,
-    suspended: bool,
+    pub account_number: i32,
+    pub username: String,
+    pub name: String,
+    pub ci: i32,
+    pub account_type: AccountType,
+    pub balance: Decimal,
+    pub last_transaction: Option<Transaction>,
+    pub suspended: bool,
+}
+
+impl Client {
+    fn new() -> Self {
+        Client {
+            account_number: 0,
+            username: String::new(),
+            name: String::new(),
+            ci: 0,
+            account_type: AccountType::Current,
+            balance: Decimal::new(0, 2),//Money{integer: 0, decimal: 0},
+            last_transaction: None,
+            suspended: false,
+        }
+    }
 }
 
 pub enum Screen {
@@ -44,8 +96,8 @@ pub struct App {
     pub input: InputFields,
     pub input_mode: InputMode,
     pub failed_logins: u8,
+    pub active_user: Option<Client>,
     pub timeout: HashMap<TimeoutType, Timer>,
-    pub resize_timeout: Instant,
     pub curr_screen: Screen,
     pub should_quit: bool,
 }
@@ -56,10 +108,8 @@ impl App {
             input: InputFields(Input::default(), Input::default()),
             input_mode: InputMode::Normal,
             failed_logins: 0,
+            active_user: None,
             timeout: HashMap::new(),
-            //timer_counter: None,
-            //timer_step: None,
-            resize_timeout: Instant::now(),
             curr_screen: Screen::Login,
             should_quit: false,
         }
@@ -71,6 +121,7 @@ impl App {
                 self.curr_screen = Screen::Login;
                 self.input_mode = InputMode::Editing(0);
                 self.failed_logins = 0;
+                self.active_user = None;
                 self.input.0.reset();
                 self.input.1.reset();
             }

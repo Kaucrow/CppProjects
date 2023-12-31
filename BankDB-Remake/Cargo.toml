@@ -7,8 +7,10 @@ edition = "2021"
 
 [dependencies]
 tokio = { version = "1.35.1", features = ["full"] }
-sqlx = { version = "0.7.3", features = ["postgres", "runtime-tokio-rustls"] }
+sqlx = { version = "0.7.3", features = ["postgres", "runtime-tokio-rustls", "rust_decimal"] }
 ratatui = "0.25.0"
 crossterm = "0.27.0"
 anyhow = "1.0.77"
 tui-input = "0.8.0"
+bcrypt = "0.15.0"
+rust_decimal = "1.33.1"

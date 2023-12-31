@@ -34,7 +34,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
             f.render_widget(title, chunks[0]);
 
             let width = chunks[0].width.max(3) - 3;
-            let name_scroll = app_lock.input.0.visual_scroll(width as usize - "* Name: ".len());
+            let name_scroll = app_lock.input.0.visual_scroll(width as usize - "* Username: ".len());
             let password_scroll = app_lock.input.1.visual_scroll(width as usize - "* Password: ".len());
             let mut name_style = Style::default();
             let mut password_style = Style::default();
@@ -44,7 +44,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                     password_style = password_style.fg(Color::DarkGray);
                     f.set_cursor(chunks[1].x
                                     + ((app_lock.input.0.visual_cursor()).max(name_scroll) - name_scroll) as u16
-                                    + "* Name: ".len() as u16
+                                    + "* Username: ".len() as u16
                                     + 1,
                                 chunks[1].y + 1,
                                 );
@@ -65,7 +65,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                 .border_style(name_style);
 
             let input = Paragraph::new(Text::from(Line::from(vec![
-                Span::styled("* Name: ", Style::default().fg(Color::Yellow)),
+                Span::styled("* Username: ", Style::default().fg(Color::Yellow)),
                 Span::styled(app_lock.input.0.value().to_string(), name_style)
             ])))
             .block(name_block)
