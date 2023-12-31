@@ -1,8 +1,5 @@
 use anyhow::Result;
 use sqlx::postgres::PgTypeInfo;
-use tui_input::Input;
-use std::time::{Instant, Duration};
-use std::collections::HashMap;
 use rust_decimal::Decimal;
 use sqlx::{
     database::HasValueRef,
@@ -49,8 +46,8 @@ impl Type<Postgres> for AccountType {
 
 #[cfg_attr(feature = "debug_derive", derive(Debug))]
 pub struct Transfer {
-    amount: Decimal,
-    recipient: String,
+    pub amount: Decimal,
+    pub recipient: String,
 }
 
 #[cfg_attr(feature = "debug_derive", derive(Debug))]
