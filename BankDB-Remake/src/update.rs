@@ -9,6 +9,7 @@ use crate::{
     model::{
         app::{
             App,
+            Popup,
             InputMode,
             TimeoutType,
         },
@@ -44,8 +45,9 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
                         let mut app_lock = app.lock().unwrap();
                         app_lock.active_user = Some(Client::from_row(&res)?);
                         app_lock.active_user.as_mut().unwrap().update_transaction(pool).await?;
+                        app_lock.active_popup = Some(Popup::LoginSuccessful);
 
-                        todo!("login successful, but not yet implemented. USER: {:?}", app_lock.active_user);
+                        //todo!("login successful, but not yet implemented. USER: {:?}", app_lock.active_user);
                         return Ok(());
                     }
                 }
@@ -58,8 +60,14 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             }
             Ok(())
         },
+        Event::EnterClientScreen => {
+            panic!("entering client screen");
+        }
         Event::SwitchInput => {
             let mut app_lock = app.lock().unwrap();
+
+            if app_lock.active_popup.is_some() { return Ok(()); }
+
             if let InputMode::Editing(field) = app_lock.input_mode {
                 if field == 0 { app_lock.input_mode = InputMode::Editing(1) }
                 else { app_lock.input_mode = InputMode::Editing(0) }
@@ -68,6 +76,9 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
         }
         Event::Key(key_event) => {
             let mut app_lock = app.lock().unwrap();
+            
+            if app_lock.active_popup.is_some() { return Ok(()); }
+
             if let InputMode::Editing(field) = app_lock.input_mode {
                 if field == 0 { app_lock.input.0.handle_event(&CrosstermEvent::Key(key_event)); }
                 else { app_lock.input.1.handle_event(&CrosstermEvent::Key(key_event)); }

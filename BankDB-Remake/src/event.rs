@@ -14,6 +14,7 @@ use std::{
 use anyhow::Result;
 use crate::model::app::{
     App,
+    Popup,
     Screen,
     TimeoutType
 };
@@ -23,6 +24,8 @@ use crate::model::app::{
 pub enum Event {
     Quit,
     TryLogin,
+    EnterAdminScreen,
+    EnterClientScreen,
     Key(KeyEvent),
     SwitchInput,
     Resize,
@@ -87,11 +90,19 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
     match event {
         CrosstermEvent::Key(key_event) => {
             if key_event.kind == KeyEventKind::Release { return; }
-            match app.lock().unwrap().curr_screen {
+            let app_lock = app.lock().unwrap();
+            match app_lock.curr_screen {
                 Screen::Login => {
                     match key_event.code {
                         KeyCode::Char('c') if key_event.modifiers == KeyModifiers::CONTROL => { sender.send(Event::Quit) },
-                        KeyCode::Enter => { sender.send(Event::TryLogin) }
+                        KeyCode::Enter => {
+                            if let (Some(Popup::LoginSuccessful), Some(user)) = (&app_lock.active_popup, &app_lock.active_user) {
+                                if user.name == "admin" { sender.send(Event::EnterAdminScreen) }
+                                else { sender.send(Event::EnterClientScreen) }
+                            } else {
+                                sender.send(Event::TryLogin)
+                            }
+                        }
                         KeyCode::Tab => { sender.send(Event::SwitchInput) }
                         _ => { sender.send(Event::Key(key_event)) }
                     }.expect("could not send terminal event");

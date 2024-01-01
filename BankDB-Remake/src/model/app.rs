@@ -7,6 +7,10 @@ pub enum Screen {
     Login,
 }
 
+pub enum Popup {
+    LoginSuccessful,
+}
+
 pub enum InputMode {
     Normal,
     /// The value represents the InputField being edited
@@ -34,6 +38,7 @@ pub struct App {
     pub active_user: Option<Client>,
     pub timeout: HashMap<TimeoutType, Timer>,
     pub curr_screen: Screen,
+    pub active_popup: Option<Popup>,
     pub should_quit: bool,
 }
 
@@ -46,6 +51,7 @@ impl App {
             active_user: None,
             timeout: HashMap::new(),
             curr_screen: Screen::Login,
+            active_popup: None,
             should_quit: false,
         }
     }

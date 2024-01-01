@@ -1,13 +1,15 @@
+use crossterm::cursor::Hide;
 use ratatui::{
     layout::{Layout, Direction, Rect, Constraint},
     prelude::{Alignment, Frame},
     style::{Color, Style},
     text::{Line, Span, Text},
-    widgets::{Block, BorderType, Borders, Paragraph}
+    widgets::{Block, BorderType, Borders, Paragraph, Clear}
 };
 use std::sync::{Arc, Mutex};
 use crate::model::app::{
     App,
+    Popup,
     Screen,
     InputMode,
     TimeoutType
@@ -105,6 +107,30 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
             let help_block = Block::default();
             let help = Paragraph::new(help_text).block(help_block);
             f.render_widget(help, chunks[3]);
+
+            if let Some(popup) = &app_lock.active_popup {
+                match popup {
+                    Popup::LoginSuccessful => {
+                        let popup_rect = centered_rect(15, (3.0 / f.size().height as f32 * 100.0 + 1.0) as u16, f.size());
+                        f.render_widget(Clear, popup_rect);
+
+                        let login_successful_block = Block::default()
+                            .borders(Borders::ALL)
+                            .border_type(BorderType::Thick);
+
+                        let login_successful_popup = Paragraph::new(Text::from(
+                            "Login successful."
+                        ))
+                        .alignment(Alignment::Center)
+                        .block(login_successful_block);
+
+                        f.render_widget(login_successful_popup, popup_rect);
+
+                        f.set_cursor(f.size().width, f.size().height);
+                    }
+                    _ => { unimplemented!() }
+                }
+            }
         },
     }
 }

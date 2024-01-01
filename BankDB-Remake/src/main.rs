@@ -24,7 +24,7 @@ async fn main() -> Result<()> {
 
     let backend = CrosstermBackend::new(std::io::stderr());
     let terminal = Terminal::new(backend)?;
-    let events = EventHandler::new(250, &app_arc);
+    let events = EventHandler::new(100, &app_arc);
     let mut tui = Tui::new(terminal, events);
     tui.enter()?;
 
