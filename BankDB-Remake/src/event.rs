@@ -90,11 +90,16 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
     match event {
         CrosstermEvent::Key(key_event) => {
             if key_event.kind == KeyEventKind::Release { return; }
+
+            match key_event.code {
+                KeyCode::Char('c') if key_event.modifiers == KeyModifiers::CONTROL => { sender.send(Event::Quit) },
+                _ => { Ok(()) }
+            }.expect("could not send terminal event");
+
             let app_lock = app.lock().unwrap();
             match app_lock.curr_screen {
                 Screen::Login => {
                     match key_event.code {
-                        KeyCode::Char('c') if key_event.modifiers == KeyModifiers::CONTROL => { sender.send(Event::Quit) },
                         KeyCode::Enter => {
                             if let (Some(Popup::LoginSuccessful), Some(user)) = (&app_lock.active_popup, &app_lock.active_user) {
                                 if user.name == "admin" { sender.send(Event::EnterAdminScreen) }

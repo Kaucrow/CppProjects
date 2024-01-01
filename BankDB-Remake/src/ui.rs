@@ -28,8 +28,12 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                     Constraint::Length(3),
                     Constraint::Length(1),
                 ])
-                .split(centered_rect(25, (8.0 / f.size().height as f32 * 100.0 + 1.0) as u16, f.size()));
-            
+                .split(centered_rect(
+                    20,
+                    area_percent(f.size().height, 30, 45),
+                    f.size()));
+
+            println!("{}", f.size().width);
             let title_block = Block::default();
 
             let title = Paragraph::new(Text::from(
@@ -132,6 +136,25 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                 }
             }
         },
+        Screen::Client => {
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Min(1),
+                    Constraint::Percentage(100),
+                    Constraint::Min(1)
+                ])
+                .split(centered_rect(
+                    area_percent(f.size().width, 150, 80),
+                    area_percent(f.size().height, 20, 80),
+                    f.size()));
+
+                println!("{}, {}", f.size().width, f.size().height);
+            let test = Paragraph::new(Text::from("Hello world, some text here"));
+            f.render_widget(test.clone(), chunks[0]);
+            f.render_widget(test.clone(), chunks[1]);
+            f.render_widget(test, chunks[2]);
+        }
     }
 }
 
@@ -153,4 +176,9 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
             Constraint::Percentage((100 - percent_x) / 2),
         ])
         .split(layout[1])[1]
+}
+
+fn area_percent(curr_size: u16, tested_size: i16, tested_percent: i16) -> u16 {
+    //if curr_size <= 35 { return 100; }
+    (((tested_percent - 100) as f32) / ((tested_size - 0) as f32) * ((curr_size - 0) as f32) + 100.0) as u16
 }

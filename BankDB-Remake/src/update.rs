@@ -9,6 +9,7 @@ use crate::{
     model::{
         app::{
             App,
+            Screen,
             Popup,
             InputMode,
             TimeoutType,
@@ -61,7 +62,9 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             Ok(())
         },
         Event::EnterClientScreen => {
-            panic!("entering client screen");
+            app.lock().unwrap().enter_screen(Screen::Client);
+            Ok(())
+            //panic!("entering client screen");
         }
         Event::SwitchInput => {
             let mut app_lock = app.lock().unwrap();

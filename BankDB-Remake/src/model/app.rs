@@ -5,6 +5,7 @@ use crate::model::client::Client;
 
 pub enum Screen {
     Login,
+    Client,
 }
 
 pub enum Popup {
@@ -56,7 +57,7 @@ impl App {
         }
     }
  
-    pub fn change_screen(&mut self, screen: Screen) {
+    pub fn enter_screen(&mut self, screen: Screen) {
         match screen {
             Screen::Login => {
                 self.curr_screen = Screen::Login;
@@ -65,6 +66,9 @@ impl App {
                 self.active_user = None;
                 self.input.0.reset();
                 self.input.1.reset();
+            }
+            Screen::Client => {
+                self.curr_screen = Screen::Client;
             }
             _ => { unimplemented!() }
         }
