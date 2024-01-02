@@ -30,6 +30,7 @@ pub enum Event {
     SwitchInput,
     Resize,
     TimeoutStep(TimeoutType),
+    ScreenCleared,
 }
 
 #[derive(Debug)]
@@ -61,6 +62,9 @@ impl EventHandler {
                     
                     if last_tick.elapsed() >= tick_rate {
                         last_tick = Instant::now();
+                        if app_arc.lock().unwrap().should_clear_screen {
+                            sender.send(Event::ScreenCleared).expect("could not send terminal event");
+                        }
                         for (timeout_type, timer) in &app_arc.lock().unwrap().timeout {
                             if timer.last_update.elapsed() > timer.tick_rate {
                                 sender.send(Event::TimeoutStep(*timeout_type)).expect("could not send terminal event");
@@ -77,7 +81,7 @@ impl EventHandler {
         }
     }
 
-    /// Receiver the next event from the handler thread
+    /// Receive the next event from the handler thread
     ///
     /// This function will always block the current thread if
     /// there is no data available and it's possible for more data to be sent
@@ -111,7 +115,10 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                         KeyCode::Tab => { sender.send(Event::SwitchInput) }
                         _ => { sender.send(Event::Key(key_event)) }
                     }.expect("could not send terminal event");
-                }
+                },
+                Screen::Client => {
+                    sender.send(Event::SwitchInput)
+                }.expect("could not send terminal event"),
                 _ => {}
             }
         },

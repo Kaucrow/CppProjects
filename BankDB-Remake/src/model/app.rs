@@ -40,6 +40,7 @@ pub struct App {
     pub timeout: HashMap<TimeoutType, Timer>,
     pub curr_screen: Screen,
     pub active_popup: Option<Popup>,
+    pub should_clear_screen: bool,
     pub should_quit: bool,
 }
 
@@ -53,11 +54,13 @@ impl App {
             timeout: HashMap::new(),
             curr_screen: Screen::Login,
             active_popup: None,
+            should_clear_screen: false,
             should_quit: false,
         }
     }
  
     pub fn enter_screen(&mut self, screen: Screen) {
+        self.should_clear_screen = true;
         match screen {
             Screen::Login => {
                 self.curr_screen = Screen::Login;
@@ -69,6 +72,7 @@ impl App {
             }
             Screen::Client => {
                 self.curr_screen = Screen::Client;
+                self.input_mode = InputMode::Normal;
             }
             _ => { unimplemented!() }
         }

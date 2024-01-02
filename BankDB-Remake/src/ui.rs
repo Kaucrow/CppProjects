@@ -1,4 +1,3 @@
-use crossterm::cursor::Hide;
 use ratatui::{
     layout::{Layout, Direction, Rect, Constraint},
     prelude::{Alignment, Frame},
@@ -29,11 +28,14 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                     Constraint::Length(1),
                 ])
                 .split(centered_rect(
-                    20,
-                    area_percent(f.size().height, 30, 45),
+                    percent_x(f, 1.0),
+                    percent_y(f, 1.0),
                     f.size()));
 
-            println!("{}", f.size().width);
+            if app_lock.should_clear_screen {
+                clear_screen(f, &chunks);
+            }
+
             let title_block = Block::default();
 
             let title = Paragraph::new(Text::from(
@@ -116,6 +118,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                 match popup {
                     Popup::LoginSuccessful => {
                         let popup_rect = centered_rect(15, (3.0 / f.size().height as f32 * 100.0 + 1.0) as u16, f.size());
+
                         f.render_widget(Clear, popup_rect);
 
                         let login_successful_block = Block::default()
@@ -145,13 +148,35 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                     Constraint::Min(1)
                 ])
                 .split(centered_rect(
-                    area_percent(f.size().width, 150, 80),
-                    area_percent(f.size().height, 20, 80),
+                    percent_x(f, 2.0),
+                    percent_y(f, 1.0),
                     f.size()));
+            
+            if app_lock.should_clear_screen {
+                clear_screen(f, &chunks);
+            }
 
-                println!("{}, {}", f.size().width, f.size().height);
+            let header_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Percentage(50),
+                    Constraint::Percentage(50),
+                ])       
+                .split(chunks[0]);
+            
+            let header_name = Paragraph::new(Text::from(
+                format!("Login: {}", app_lock.active_user.as_ref().unwrap().name
+            )));
+
+            f.render_widget(header_name, header_chunks[0]);
+            
+            let balance_name = Paragraph::new(Text::from(
+                format!("Balance: {}", app_lock.active_user.as_ref().unwrap().balance
+            ))).alignment(Alignment::Right);
+            
+            f.render_widget(balance_name, header_chunks[1]);
+
             let test = Paragraph::new(Text::from("Hello world, some text here"));
-            f.render_widget(test.clone(), chunks[0]);
             f.render_widget(test.clone(), chunks[1]);
             f.render_widget(test, chunks[2]);
         }
@@ -178,7 +203,26 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
         .split(layout[1])[1]
 }
 
-fn area_percent(curr_size: u16, tested_size: i16, tested_percent: i16) -> u16 {
-    //if curr_size <= 35 { return 100; }
-    (((tested_percent - 100) as f32) / ((tested_size - 0) as f32) * ((curr_size - 0) as f32) + 100.0) as u16
+/// Calculates the width percentage for centering a rect with a constant width in a given frame.
+/// Uses an exponential function with parameters a > 0 and c > 0. 
+/// The multiplier param adjusts the rect size. Should be used with `centered_rect` function.
+fn percent_x(f: &mut Frame, multiplier: f32) -> u16 {
+    let result = ((multiplier * (125.00 * 0.99_f32.powi(f.size().width as i32))) + 1.0) as u16;
+    if result >= 100 { return 100; }
+    else { return result; }
+}
+
+/// Calculates the height percentage for centering a rect with a constant height in a given frame.
+/// Uses an exponential function with parameters a > 0 and c > 0. 
+/// The multiplier param adjusts the rect size. Should be used with `centered_rect` function.
+fn percent_y(f: &mut Frame, multiplier: f32) -> u16 {
+    let result = ((multiplier * (130.00 * 0.95_f32.powi(f.size().height as i32))) + 3.0) as u16;
+    if result >= 100 { return 100; }
+    else { return result; }
+}
+
+fn clear_screen(f: &mut Frame, chunks: &std::rc::Rc<[Rect]>) {
+    for chunk in chunks.iter() {
+        f.render_widget(Clear, *chunk);
+    }
 }

@@ -66,6 +66,10 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             Ok(())
             //panic!("entering client screen");
         }
+        Event::ScreenCleared => {
+            app.lock().unwrap().should_clear_screen = false;
+            Ok(())
+        }
         Event::SwitchInput => {
             let mut app_lock = app.lock().unwrap();
 
