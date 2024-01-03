@@ -40,6 +40,7 @@ pub enum Event {
     PreviousClientAction,
     SelectAction,
     Deposit,
+    Withdraw,
     Resize,
     TimeoutStep(TimeoutType),
 }
@@ -103,14 +104,16 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
         CrosstermEvent::Key(key_event) => {
             if key_event.kind == KeyEventKind::Release { return; }
 
+            let app_lock = app.lock().unwrap();
+
             // Events common to all screens.
             match key_event.code {
-                KeyCode::Char('c') if key_event.modifiers == KeyModifiers::CONTROL => { sender.send(Event::Quit) },
-                _ => { Ok(()) }
+                KeyCode::Char('c') if key_event.modifiers == KeyModifiers::CONTROL => sender.send(Event::Quit),
+                _ if app_lock.hold_popup => { sender.send(Event::ExitPopup).expect("could not send terminal event"); return; },
+                _ => Ok(())
             }.expect("could not send terminal event");
 
             // Screen-specific events.
-            let app_lock = app.lock().unwrap();
             match app_lock.curr_screen {
                 Screen::Login => {
                     match app_lock.active_popup {
@@ -145,10 +148,14 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                 _ => Ok(())
                             }.expect("could not send terminal event");
                         },
-                        Some(Popup::Deposit) => {
+                        Some(Popup::Deposit) | Some(Popup::Withdraw) => {
                             match key_event.code {
                                 KeyCode::Esc => sender.send(Event::ExitPopup),
-                                KeyCode::Enter => sender.send(Event::Deposit),
+                                KeyCode::Enter => {
+                                    if let Some(Popup::Deposit) = app_lock.active_popup { sender.send(Event::Deposit) }
+                                    else { sender.send(Event::Withdraw) }
+                                }
+                                //_ if app_lock.hold_popup => sender.send(Event::ExitPopup),
                                 _ => sender.send(Event::KeyInput(key_event, InputBlacklist::Money))
                             }.expect("could not send terminal event");
                         },

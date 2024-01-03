@@ -193,12 +193,12 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
             
             f.render_stateful_widget(actions, list_chunks[1], &mut app_lock.client_action_list_state);
 
-            let help = Paragraph::new(Text::from(
-                "Choose an action to perform."
+            let help_text = Paragraph::new(Text::from(
+                format!("{}", app_lock.help_text)
             ))
             .block(Block::default().borders(Borders::TOP));
 
-            f.render_widget(help, chunks[2]);
+            f.render_widget(help_text, chunks[2]);
 
             if let Some(popup) = app_lock.active_popup {
                 match popup {
@@ -228,16 +228,26 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
 
                         f.render_widget(client_info, popup_rect);
                     },
-                    Popup::Deposit => {
-                        let popup_rect = centered_rect(
+                    Popup::Deposit | Popup::Withdraw => {
+                        let popup_rect = Layout::default()
+                            .direction(Direction::Vertical)
+                            .constraints([
+                                Constraint::Length(3),
+                                Constraint::Percentage(100)
+                            ]).split(centered_rect(
                             percent_x(f, 1.0),
-                            percent_y(f, 0.3),
-                            f.size()
+                            percent_y(f, 0.4),
+                            f.size())
                         );
 
-                        f.render_widget(Clear, popup_rect);
+                        f.render_widget(Clear, popup_rect[0]);
 
-                        let deposit_block = Block::default().borders(Borders::ALL).border_type(BorderType::Thick).title("Deposit amount");
+                        let title = {
+                            if let Some(Popup::Deposit) = app_lock.active_popup { "Deposit amount" }
+                            else { "Withdraw amount" }
+                        };
+
+                        let deposit_block = Block::default().borders(Borders::ALL).border_type(BorderType::Thick).title(title);
 
                         let deposit = Paragraph::new(Line::from(vec![
                             Span::raw(" "),
@@ -246,15 +256,15 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                         .block(deposit_block)
                         .alignment(Alignment::Left);
 
-                        f.render_widget(deposit, popup_rect);
+                        f.render_widget(deposit, popup_rect[0]);
 
                         f.set_cursor(
-                            popup_rect.x
+                            popup_rect[0].x
                             + app_lock.input.0.visual_cursor() as u16
                             + 2,
-                            popup_rect.y + 1);
+                            popup_rect[0].y + 1);
                     }
-                    _ => { unimplemented!("HERE"); }
+                    _ => { unimplemented!("popup ui not implemented"); }
                 }
             }
         }

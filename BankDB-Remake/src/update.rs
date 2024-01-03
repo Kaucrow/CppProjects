@@ -29,7 +29,15 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             Ok(())
         },
         Event::ExitPopup => {
-            app.lock().unwrap().active_popup = None;
+            let mut app_lock = app.lock().unwrap();
+            app_lock.active_popup = None;
+            app_lock.input.0.reset();
+            app_lock.input.1.reset();
+            app_lock.hold_popup = false;
+            match app_lock.curr_screen {
+                Screen::Client => app_lock.help_text = String::from("Choose an action to perform."),
+                _ => {}
+            }
             Ok(())
         },
         Event::TimeoutStep(timeout_type) => {
@@ -93,20 +101,26 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
                 match blacklist {
                     InputBlacklist::None => {}
                     InputBlacklist::Money => {
+                        let input_value = {
+                            if field == 0 {
+                                app_lock.input.0.value()
+                            } else {
+                                app_lock.input.1.value()
+                            }
+                        };
+
                         if char != '.' {
                             if !char.is_numeric() {
                                 return Ok(());
-                            }
-                        } else {
-                            if field == 0 {
-                                if app_lock.input.0.value().contains('.') {
-                                    return Ok(())
-                                } 
                             } else {
-                                if app_lock.input.1.value().contains('.') {
-                                    return Ok(())
+                                if let Some(dot_index) = input_value.find('.') {
+                                    if input_value[dot_index + 1..].len() == 2 { return Ok(()) }
                                 }
                             }
+                        } else {
+                            if app_lock.input.0.value().contains('.') {
+                                return Ok(())
+                            } 
                         }
                     }
                     _ => { unimplemented!("blacklist isn't implemented") }
@@ -130,22 +144,36 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             if let Some(selected) = app_lock.client_action_list_state.selected() {
                 app_lock.active_popup = Some(*app_lock.client_popups.get(&selected).unwrap_or_else(|| panic!("popup not found in client_popups")));
                 match app_lock.active_popup.unwrap() {
-                    Popup::Deposit => app_lock.input_mode = InputMode::Editing(0),
+                    Popup::Deposit | Popup::Withdraw => app_lock.input_mode = InputMode::Editing(0),
                     _ => {}
                 }
             }
             Ok(())
         }
-        Event::Deposit => {
+        Event::Deposit | Event::Withdraw => {
             let mut app_lock = app.lock().unwrap();
-            let deposit_input = Decimal::from_str_exact(app_lock.input.0.value())?;
-            app_lock.active_user.as_mut().unwrap().balance += deposit_input;
+            let amount_input = Decimal::from_str_exact(app_lock.input.0.value())?;
+
+            if let Event::Deposit = event {
+                app_lock.active_user.as_mut().unwrap().balance += amount_input;
+            } else {
+                if amount_input > app_lock.active_user.as_ref().unwrap().balance {
+                    app_lock.help_text = String::from("You don't have enough money.");
+                    app_lock.hold_popup = true;
+                    return Ok(())
+                } else {
+                    app_lock.active_user.as_mut().unwrap().balance -= amount_input;
+                }
+            }
+
             sqlx::query("UPDATE clients SET balance = $1 WHERE username = $2")
                 .bind(&app_lock.active_user.as_ref().unwrap().balance)
                 .bind(&app_lock.active_user.as_ref().unwrap().username)
                 .execute(pool)
                 .await?;
+
             app_lock.active_popup = None;
+            app_lock.input.0.reset();
             Ok(())
         }
         _ => { Ok(()) }

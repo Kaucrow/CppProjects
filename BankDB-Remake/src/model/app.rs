@@ -15,6 +15,9 @@ pub enum Popup {
     LoginSuccessful,
     ViewInfo,
     Deposit,
+    Withdraw,
+    Transfer,
+    ChangePsswd
 }
 
 pub enum InputMode {
@@ -42,12 +45,14 @@ pub struct App {
     pub input_mode: InputMode,
     pub failed_logins: u8,
     pub active_user: Option<Client>,
-    pub client_actions: [String; 5],
+    pub client_actions: [&'static str; 5],
     pub client_action_list_state: ListState,
     pub client_popups: HashMap<usize, Popup>,
+    pub help_text: String,
     pub timeout: HashMap<TimeoutType, Timer>,
     pub curr_screen: Screen,
     pub active_popup: Option<Popup>,
+    pub hold_popup: bool,
     pub should_clear_screen: bool,
     pub should_quit: bool,
 }
@@ -59,12 +64,26 @@ impl App {
             input_mode: InputMode::Normal,
             failed_logins: 0,
             active_user: None,
-            client_actions: ["View info".to_string(), "Make a deposit".to_string(), "Make a withdrawal".to_string(), "Make a transfer".to_string(), "Change password".to_string()],
+            client_actions: [
+                "View info",
+                "Make a deposit",
+                "Make a withdrawal",
+                "Make a transfer",
+                "Change password"
+            ],
             client_action_list_state: ListState::default(),
-            client_popups: HashMap::from([(0, Popup::ViewInfo), (1, Popup::Deposit)]),
+            client_popups: HashMap::from([
+                (0, Popup::ViewInfo),
+                (1, Popup::Deposit),
+                (2, Popup::Withdraw),
+                (3, Popup::Transfer),
+                (4, Popup::ChangePsswd)
+            ]),
+            help_text: String::new(),
             timeout: HashMap::new(),
             curr_screen: Screen::Login,
             active_popup: None,
+            hold_popup: false,
             should_clear_screen: false,
             should_quit: false,
         }
@@ -85,6 +104,7 @@ impl App {
             Screen::Client => {
                 self.curr_screen = Screen::Client;
                 self.input_mode = InputMode::Normal;
+                self.help_text = String::from("Choose an action to perform.")
             }
             _ => { unimplemented!() }
         }
