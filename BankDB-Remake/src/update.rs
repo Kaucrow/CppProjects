@@ -144,38 +144,83 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             if let Some(selected) = app_lock.client_action_list_state.selected() {
                 app_lock.active_popup = Some(*app_lock.client_popups.get(&selected).unwrap_or_else(|| panic!("popup not found in client_popups")));
                 match app_lock.active_popup.unwrap() {
-                    Popup::Deposit | Popup::Withdraw => app_lock.input_mode = InputMode::Editing(0),
+                    Popup::Deposit | Popup::Withdraw | Popup::Transfer => app_lock.input_mode = InputMode::Editing(0),
                     _ => {}
                 }
             }
             Ok(())
-        }
+        },
         Event::Deposit | Event::Withdraw => {
-            let mut app_lock = app.lock().unwrap();
-            let amount_input = Decimal::from_str_exact(app_lock.input.0.value())?;
-
-            if let Event::Deposit = event {
-                app_lock.active_user.as_mut().unwrap().balance += amount_input;
-            } else {
-                if amount_input > app_lock.active_user.as_ref().unwrap().balance {
-                    app_lock.help_text = String::from("You don't have enough money.");
+            modify_balance(app, pool, event).await?;
+            app.lock().unwrap().input.0.reset();
+            Ok(())
+        },
+        Event::Transfer => {
+            let beneficiary = app.lock().unwrap().input.1.value().to_string();
+            {
+                let mut app_lock = app.lock().unwrap();
+                if beneficiary == app_lock.active_user.as_ref().unwrap().username {
+                    app_lock.help_text = String::from("You can't transfer money to yourself.");
                     app_lock.hold_popup = true;
-                    return Ok(())
-                } else {
-                    app_lock.active_user.as_mut().unwrap().balance -= amount_input;
+                    return Ok(());
                 }
             }
 
-            sqlx::query("UPDATE clients SET balance = $1 WHERE username = $2")
-                .bind(&app_lock.active_user.as_ref().unwrap().balance)
-                .bind(&app_lock.active_user.as_ref().unwrap().username)
-                .execute(pool)
-                .await?;
+            match sqlx::query("SELECT * FROM clients WHERE username = $1")
+                .bind(&beneficiary)
+                .fetch_optional(pool)
+                .await? {
+                    Some(_) => {
+                        let prev_balance = app.lock().unwrap().active_user.as_ref().unwrap().balance.clone();
 
-            app_lock.active_popup = None;
-            app_lock.input.0.reset();
+                        modify_balance(app, pool, event).await?;
+
+                        let mut app_lock = app.lock().unwrap();
+                        if app_lock.active_user.as_ref().unwrap().balance != prev_balance {
+                            sqlx::query("UPDATE clients SET balance = balance + $1 WHERE username = $2")
+                            .bind(Decimal::from_str_exact(app_lock.input.0.value()).unwrap())
+                            .bind(beneficiary)
+                            .execute(pool)
+                            .await?;
+                        }
+
+                        app_lock.input.0.reset();
+                        app_lock.input.1.reset();
+                    }
+                    None => {
+                        let mut app_lock = app.lock().unwrap();
+                        app_lock.help_text = String::from("The beneficiary doesn't exist.");
+                        app_lock.hold_popup = true;
+                    }
+                }
             Ok(())
-        }
+        },
         _ => { Ok(()) }
     }
+}
+
+async fn modify_balance(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Event) -> Result<()> {
+    let mut app_lock = app.lock().unwrap();
+    let amount_input = Decimal::from_str_exact(app_lock.input.0.value())?;
+
+    if let Event::Deposit = event {
+        app_lock.active_user.as_mut().unwrap().balance += amount_input;
+    } else {
+        if amount_input > app_lock.active_user.as_ref().unwrap().balance {
+            app_lock.help_text = String::from("You don't have enough money.");
+            app_lock.hold_popup = true;
+            return Ok(())
+        } else {
+            app_lock.active_user.as_mut().unwrap().balance -= amount_input;
+        }
+    }
+
+    sqlx::query("UPDATE clients SET balance = $1 WHERE username = $2")
+        .bind(&app_lock.active_user.as_ref().unwrap().balance)
+        .bind(&app_lock.active_user.as_ref().unwrap().username)
+        .execute(pool)
+        .await?;
+
+    app_lock.active_popup = None;
+    Ok(())
 }

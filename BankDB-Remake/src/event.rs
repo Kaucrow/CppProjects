@@ -6,7 +6,7 @@ use crossterm::event::{
     KeyEvent,
     KeyModifiers,
 };
-use tui_input::Input;
+use rust_decimal::Decimal;
 use std::{
     sync::{mpsc, Arc, Mutex},
     thread,
@@ -17,7 +17,8 @@ use crate::model::app::{
     App,
     Popup,
     Screen,
-    TimeoutType
+    TimeoutType,
+    InputMode,
 };
 
 #[derive(Debug)]
@@ -41,6 +42,7 @@ pub enum Event {
     SelectAction,
     Deposit,
     Withdraw,
+    Transfer,
     Resize,
     TimeoutStep(TimeoutType),
 }
@@ -118,18 +120,13 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                 Screen::Login => {
                     match app_lock.active_popup {
                         Some(Popup::LoginSuccessful) => {
-                            match key_event.code {
-                                KeyCode::Enter => {
-                                    if let Some(user) = &app_lock.active_user {
-                                        if user.name == "admin" { sender.send(Event::EnterAdminScreen) }
-                                        else { sender.send(Event::EnterClientScreen) }
-                                    } else {
-                                        Ok(())
-                                    }
-                                }
-                                _ => Ok(())
+                            if let Some(user) = &app_lock.active_user {
+                                if user.name == "admin" { sender.send(Event::EnterAdminScreen) }
+                                else { sender.send(Event::EnterClientScreen) }
+                            } else {
+                                Ok(())
                             }.expect("could not send terminal event");
-                        }
+                        },
                         None => {
                             match key_event.code {
                                 KeyCode::Enter => sender.send(Event::TryLogin),
@@ -155,8 +152,22 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                     if let Some(Popup::Deposit) = app_lock.active_popup { sender.send(Event::Deposit) }
                                     else { sender.send(Event::Withdraw) }
                                 }
-                                //_ if app_lock.hold_popup => sender.send(Event::ExitPopup),
                                 _ => sender.send(Event::KeyInput(key_event, InputBlacklist::Money))
+                            }.expect("could not send terminal event");
+                        },
+                        Some(Popup::Transfer) => {
+                            match key_event.code {
+                                KeyCode::Esc => sender.send(Event::ExitPopup),
+                                KeyCode::Tab => sender.send(Event::SwitchInput),
+                                KeyCode::Enter => {
+                                    sender.send(Event::Transfer)
+                                },
+                                _ => {
+                                    if let InputMode::Editing(field) = app_lock.input_mode {
+                                        if field == 0 { sender.send(Event::KeyInput(key_event, InputBlacklist::Money)) }
+                                        else { sender.send(Event::KeyInput(key_event, InputBlacklist::None)) }
+                                    } else { Ok(()) }
+                                }
                             }.expect("could not send terminal event");
                         },
                         None => {
@@ -183,7 +194,7 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
             let mut app_lock = app.lock().unwrap();
             if !app_lock.timeout.contains_key(&TimeoutType::Resize) {
                 app_lock.add_timeout(1, 250, TimeoutType::Resize);
-                sender.send( Event::Resize )
+                sender.send(Event::Resize)
             } else {
                 Ok(())
             }

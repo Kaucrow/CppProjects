@@ -1,5 +1,5 @@
 use ratatui::{
-    layout::{Layout, Direction, Rect, Constraint},
+    layout::{Layout, Direction, Rect, Constraint, Margin},
     prelude::{Alignment, Frame},
     style::{Color, Style, Modifier},
     text::{Line, Span, Text},
@@ -80,7 +80,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
 
             let input = Paragraph::new(Text::from(Line::from(vec![
                 Span::styled("* Username: ", Style::default().fg(Color::Yellow)),
-                Span::styled(app_lock.input.0.value().to_string(), name_style)
+                Span::styled(app_lock.input.0.value(), name_style)
             ])))
             .block(name_block)
             .scroll((0, name_scroll as u16));
@@ -251,7 +251,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
 
                         let deposit = Paragraph::new(Line::from(vec![
                             Span::raw(" "),
-                            Span::raw(app_lock.input.0.value().to_string()),
+                            Span::raw(app_lock.input.0.value()),
                         ]))
                         .block(deposit_block)
                         .alignment(Alignment::Left);
@@ -263,6 +263,59 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                             + app_lock.input.0.visual_cursor() as u16
                             + 2,
                             popup_rect[0].y + 1);
+                    }
+                    Popup::Transfer => {
+                        let popup_rect = centered_rect(
+                            percent_x(f, 1.0),
+                            percent_y(f, 0.9),
+                            f.size()
+                        );
+
+                        let popup_chunks = Layout::default()
+                            .direction(Direction::Vertical)
+                            .constraints([
+                                Constraint::Min(3),
+                                Constraint::Length(1),
+                                Constraint::Min(3),
+                            ])
+                            .split(popup_rect.inner(&Margin::new(1, 1)));
+                        
+                        let popup_block = Block::default().borders(Borders::ALL).border_type(BorderType::Thick).title("Transfer");
+                        let amount_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).title("Amount");
+                        let beneficiary_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).title("Beneficiary");
+
+                        let amount = Paragraph::new(Line::from(vec![
+                            Span::raw(" "),
+                            Span::raw(app_lock.input.0.value())
+                        ]))
+                        .block(amount_block);
+                        
+                        let beneficiary = Paragraph::new(Line::from(vec![
+                            Span::raw(" "),
+                            Span::raw(app_lock.input.1.value())
+                        ]))
+                        .block(beneficiary_block);
+            
+                        if let InputMode::Editing(field) = app_lock.input_mode {
+                            if field == 0 {
+                                f.set_cursor(popup_chunks[0].x
+                                                + app_lock.input.0.visual_cursor() as u16
+                                                + 2,
+                                            popup_chunks[0].y + 1,
+                                            );
+                            } else {
+                                f.set_cursor(popup_chunks[2].x
+                                                + app_lock.input.1.visual_cursor() as u16
+                                                + 2,
+                                            popup_chunks[2].y + 1,
+                                            );
+                            }
+                        }
+                        
+                        f.render_widget(Clear, popup_rect);
+                        f.render_widget(popup_block, popup_rect);
+                        f.render_widget(amount, popup_chunks[0]);
+                        f.render_widget(beneficiary, popup_chunks[2]);
                     }
                     _ => { unimplemented!("popup ui not implemented"); }
                 }
