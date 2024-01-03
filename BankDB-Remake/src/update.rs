@@ -1,11 +1,15 @@
-use crossterm::event::Event as CrosstermEvent;
+use crossterm::event::{Event as CrosstermEvent, KeyEventKind, KeyCode};
 use std::sync::{Arc, Mutex};
-use tui_input::backend::crossterm::EventHandler;
+use tui_input::{backend::crossterm::EventHandler, Input};
 use sqlx::{Row, Pool, Postgres, FromRow};
+use rust_decimal::Decimal;
 use bcrypt::verify;
 use anyhow::Result;
 use crate::{
-    event::Event,
+    event::{ 
+        Event,
+        InputBlacklist,
+    },
     model::{
         app::{
             App,
@@ -22,6 +26,10 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
     match event {
         Event::Quit => {
             app.lock().unwrap().should_quit = true;
+            Ok(())
+        },
+        Event::ExitPopup => {
+            app.lock().unwrap().active_popup = None;
             Ok(())
         },
         Event::TimeoutStep(timeout_type) => {
@@ -48,7 +56,6 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
                         app_lock.active_user.as_mut().unwrap().update_transaction(pool).await?;
                         app_lock.active_popup = Some(Popup::LoginSuccessful);
 
-                        //todo!("login successful, but not yet implemented. USER: {:?}", app_lock.active_user);
                         return Ok(());
                     }
                 }
@@ -64,16 +71,9 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
         Event::EnterClientScreen => {
             app.lock().unwrap().enter_screen(Screen::Client);
             Ok(())
-            //panic!("entering client screen");
-        }
-        Event::ScreenCleared => {
-            app.lock().unwrap().should_clear_screen = false;
-            Ok(())
         }
         Event::SwitchInput => {
             let mut app_lock = app.lock().unwrap();
-
-            if app_lock.active_popup.is_some() { return Ok(()); }
 
             if let InputMode::Editing(field) = app_lock.input_mode {
                 if field == 0 { app_lock.input_mode = InputMode::Editing(1) }
@@ -81,17 +81,73 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             }
             Ok(())
         }
-        Event::Key(key_event) => {
+        Event::KeyInput(key_event, blacklist) => {
             let mut app_lock = app.lock().unwrap();
-            
-            if app_lock.active_popup.is_some() { return Ok(()); }
 
-            if let InputMode::Editing(field) = app_lock.input_mode {
-                if field == 0 { app_lock.input.0.handle_event(&CrosstermEvent::Key(key_event)); }
-                else { app_lock.input.1.handle_event(&CrosstermEvent::Key(key_event)); }
-            }
+            let field = match app_lock.input_mode {
+                InputMode::Editing(field) => field,
+                InputMode::Normal => panic!("KeyInput event fired when InputMode was normal")
+            };
+
+            if let KeyCode::Char(char) = key_event.code {
+                match blacklist {
+                    InputBlacklist::None => {}
+                    InputBlacklist::Money => {
+                        if char != '.' {
+                            if !char.is_numeric() {
+                                return Ok(());
+                            }
+                        } else {
+                            if field == 0 {
+                                if app_lock.input.0.value().contains('.') {
+                                    return Ok(())
+                                } 
+                            } else {
+                                if app_lock.input.1.value().contains('.') {
+                                    return Ok(())
+                                }
+                            }
+                        }
+                    }
+                    _ => { unimplemented!("blacklist isn't implemented") }
+                }
+            };
+ 
+            if field == 0 { app_lock.input.0.handle_event(&CrosstermEvent::Key(key_event)); }
+            else { app_lock.input.1.handle_event(&CrosstermEvent::Key(key_event)); }
             Ok(())
         },
+        Event::NextClientAction => {
+            app.lock().unwrap().next_client_action();
+            Ok(())
+        },
+        Event::PreviousClientAction => {
+            app.lock().unwrap().previous_client_action();
+            Ok(())
+        },
+        Event::SelectAction => {
+            let mut app_lock = app.lock().unwrap();
+            if let Some(selected) = app_lock.client_action_list_state.selected() {
+                app_lock.active_popup = Some(*app_lock.client_popups.get(&selected).unwrap_or_else(|| panic!("popup not found in client_popups")));
+                match app_lock.active_popup.unwrap() {
+                    Popup::Deposit => app_lock.input_mode = InputMode::Editing(0),
+                    _ => {}
+                }
+            }
+            Ok(())
+        }
+        Event::Deposit => {
+            let mut app_lock = app.lock().unwrap();
+            let deposit_input = Decimal::from_str_exact(app_lock.input.0.value())?;
+            app_lock.active_user.as_mut().unwrap().balance += deposit_input;
+            sqlx::query("UPDATE clients SET balance = $1 WHERE username = $2")
+                .bind(&app_lock.active_user.as_ref().unwrap().balance)
+                .bind(&app_lock.active_user.as_ref().unwrap().username)
+                .execute(pool)
+                .await?;
+            app_lock.active_popup = None;
+            Ok(())
+        }
         _ => { Ok(()) }
     }
 }

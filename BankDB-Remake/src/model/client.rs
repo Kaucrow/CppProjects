@@ -12,7 +12,7 @@ use sqlx::{
     Type,
 };
 
-#[cfg_attr(feature = "debug_derive", derive(Debug))]
+#[derive(Debug)]
 pub enum AccountType {
     Debit,
     Current,

@@ -1,6 +1,7 @@
 use tui_input::Input;
 use std::time::{Instant, Duration};
 use std::collections::HashMap;
+use ratatui::widgets::{ListState, List};
 use crate::model::client::Client;
 
 pub enum Screen {
@@ -8,8 +9,12 @@ pub enum Screen {
     Client,
 }
 
+#[derive(Copy, Clone)]
+#[cfg_attr(feature = "debug_derive", derive(Debug))]
 pub enum Popup {
     LoginSuccessful,
+    ViewInfo,
+    Deposit,
 }
 
 pub enum InputMode {
@@ -37,6 +42,9 @@ pub struct App {
     pub input_mode: InputMode,
     pub failed_logins: u8,
     pub active_user: Option<Client>,
+    pub client_actions: [String; 5],
+    pub client_action_list_state: ListState,
+    pub client_popups: HashMap<usize, Popup>,
     pub timeout: HashMap<TimeoutType, Timer>,
     pub curr_screen: Screen,
     pub active_popup: Option<Popup>,
@@ -51,6 +59,9 @@ impl App {
             input_mode: InputMode::Normal,
             failed_logins: 0,
             active_user: None,
+            client_actions: ["View info".to_string(), "Make a deposit".to_string(), "Make a withdrawal".to_string(), "Make a transfer".to_string(), "Change password".to_string()],
+            client_action_list_state: ListState::default(),
+            client_popups: HashMap::from([(0, Popup::ViewInfo), (1, Popup::Deposit)]),
             timeout: HashMap::new(),
             curr_screen: Screen::Login,
             active_popup: None,
@@ -61,14 +72,15 @@ impl App {
  
     pub fn enter_screen(&mut self, screen: Screen) {
         self.should_clear_screen = true;
+        self.active_popup = None;
+        self.input.0.reset();
+        self.input.1.reset();
         match screen {
             Screen::Login => {
                 self.curr_screen = Screen::Login;
                 self.input_mode = InputMode::Editing(0);
                 self.failed_logins = 0;
                 self.active_user = None;
-                self.input.0.reset();
-                self.input.1.reset();
             }
             Screen::Client => {
                 self.curr_screen = Screen::Client;
@@ -76,6 +88,34 @@ impl App {
             }
             _ => { unimplemented!() }
         }
+    }
+
+    pub fn next_client_action(&mut self) {
+        let i = match self.client_action_list_state.selected() {
+            Some(i) => {
+                if i >= self.client_actions.len() - 1 {
+                    0
+                } else {
+                    i + 1
+                }
+            }
+            None => 0,
+        };
+        self.client_action_list_state.select(Some(i));
+    }
+    
+    pub fn previous_client_action(&mut self) {
+        let i = match self.client_action_list_state.selected() {
+            Some(i) => {
+                if i == 0 {
+                    self.client_actions.len() - 1
+                } else {
+                    i - 1
+                }
+            }
+            None => 0,
+        };
+        self.client_action_list_state.select(Some(i));
     }
 
     /// The timeout tick rate here should be equal or greater to the EventHandler tick rate.

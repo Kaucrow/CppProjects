@@ -6,6 +6,7 @@ use crossterm::event::{
     KeyEvent,
     KeyModifiers,
 };
+use tui_input::Input;
 use std::{
     sync::{mpsc, Arc, Mutex},
     thread,
@@ -19,18 +20,28 @@ use crate::model::app::{
     TimeoutType
 };
 
+#[derive(Debug)]
+pub enum InputBlacklist {
+    None,
+    Money,
+}
+
 /// Terminal events
 #[derive(Debug)]
 pub enum Event {
     Quit,
+    ExitPopup,
     TryLogin,
     EnterAdminScreen,
     EnterClientScreen,
-    Key(KeyEvent),
+    KeyInput(KeyEvent, InputBlacklist),
     SwitchInput,
+    NextClientAction,
+    PreviousClientAction,
+    SelectAction,
+    Deposit,
     Resize,
     TimeoutStep(TimeoutType),
-    ScreenCleared,
 }
 
 #[derive(Debug)]
@@ -62,9 +73,6 @@ impl EventHandler {
                     
                     if last_tick.elapsed() >= tick_rate {
                         last_tick = Instant::now();
-                        if app_arc.lock().unwrap().should_clear_screen {
-                            sender.send(Event::ScreenCleared).expect("could not send terminal event");
-                        }
                         for (timeout_type, timer) in &app_arc.lock().unwrap().timeout {
                             if timer.last_update.elapsed() > timer.tick_rate {
                                 sender.send(Event::TimeoutStep(*timeout_type)).expect("could not send terminal event");
@@ -95,31 +103,73 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
         CrosstermEvent::Key(key_event) => {
             if key_event.kind == KeyEventKind::Release { return; }
 
+            // Events common to all screens.
             match key_event.code {
                 KeyCode::Char('c') if key_event.modifiers == KeyModifiers::CONTROL => { sender.send(Event::Quit) },
                 _ => { Ok(()) }
             }.expect("could not send terminal event");
 
+            // Screen-specific events.
             let app_lock = app.lock().unwrap();
             match app_lock.curr_screen {
                 Screen::Login => {
-                    match key_event.code {
-                        KeyCode::Enter => {
-                            if let (Some(Popup::LoginSuccessful), Some(user)) = (&app_lock.active_popup, &app_lock.active_user) {
-                                if user.name == "admin" { sender.send(Event::EnterAdminScreen) }
-                                else { sender.send(Event::EnterClientScreen) }
-                            } else {
-                                sender.send(Event::TryLogin)
-                            }
+                    match app_lock.active_popup {
+                        Some(Popup::LoginSuccessful) => {
+                            match key_event.code {
+                                KeyCode::Enter => {
+                                    if let Some(user) = &app_lock.active_user {
+                                        if user.name == "admin" { sender.send(Event::EnterAdminScreen) }
+                                        else { sender.send(Event::EnterClientScreen) }
+                                    } else {
+                                        Ok(())
+                                    }
+                                }
+                                _ => Ok(())
+                            }.expect("could not send terminal event");
                         }
-                        KeyCode::Tab => { sender.send(Event::SwitchInput) }
-                        _ => { sender.send(Event::Key(key_event)) }
-                    }.expect("could not send terminal event");
+                        None => {
+                            match key_event.code {
+                                KeyCode::Enter => sender.send(Event::TryLogin),
+                                KeyCode::Tab => sender.send(Event::SwitchInput),
+                                _ => sender.send(Event::KeyInput(key_event, InputBlacklist::None)),
+                            }.expect("could not send terminal event");
+                        }
+                        _ => { unimplemented!("popup not found in match block") }
+                    }
                 },
                 Screen::Client => {
-                    sender.send(Event::SwitchInput)
-                }.expect("could not send terminal event"),
-                _ => {}
+                    match app_lock.active_popup {
+                        Some(Popup::ViewInfo) => {
+                            match key_event.code {
+                                KeyCode::Esc => sender.send(Event::ExitPopup),
+                                _ => Ok(())
+                            }.expect("could not send terminal event");
+                        },
+                        Some(Popup::Deposit) => {
+                            match key_event.code {
+                                KeyCode::Esc => sender.send(Event::ExitPopup),
+                                KeyCode::Enter => sender.send(Event::Deposit),
+                                _ => sender.send(Event::KeyInput(key_event, InputBlacklist::Money))
+                            }.expect("could not send terminal event");
+                        },
+                        None => {
+                            match key_event.code {
+                                KeyCode::Char('k') | KeyCode::Up => {
+                                    sender.send(Event::PreviousClientAction)
+                                }
+                                KeyCode::Char('j') | KeyCode::Down => {
+                                    sender.send(Event::NextClientAction)
+                                }
+                                KeyCode::Enter => {
+                                    sender.send(Event::SelectAction)
+                                }
+                                _ => { Ok(()) }
+                            }.expect("could not send terminal event");
+                        }
+                        _ => { unimplemented!("popup not found in match block") }
+                    }
+                },
+                _ => { unimplemented!("screen not found in match block") }
             }
         },
         CrosstermEvent::Resize(_, _) => {

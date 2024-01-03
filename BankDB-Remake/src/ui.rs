@@ -1,21 +1,21 @@
 use ratatui::{
     layout::{Layout, Direction, Rect, Constraint},
     prelude::{Alignment, Frame},
-    style::{Color, Style},
+    style::{Color, Style, Modifier},
     text::{Line, Span, Text},
-    widgets::{Block, BorderType, Borders, Paragraph, Clear}
+    widgets::{Block, List, BorderType, Borders, Paragraph, Clear}
 };
 use std::sync::{Arc, Mutex};
-use crate::model::app::{
+use crate::model::{app::{
     App,
     Popup,
     Screen,
     InputMode,
     TimeoutType
-};
+}, client};
 
 pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
-    let app_lock = app.lock().unwrap();
+    let mut app_lock = app.lock().unwrap();
 
     match app_lock.curr_screen {
         Screen::Login => {
@@ -34,6 +34,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
 
             if app_lock.should_clear_screen {
                 clear_screen(f, &chunks);
+                app_lock.should_clear_screen = false;
             }
 
             let title_block = Block::default();
@@ -113,7 +114,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
             let help_block = Block::default();
             let help = Paragraph::new(help_text).block(help_block);
             f.render_widget(help, chunks[3]);
-
+            
             if let Some(popup) = &app_lock.active_popup {
                 match popup {
                     Popup::LoginSuccessful => {
@@ -143,17 +144,18 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
             let chunks = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([
-                    Constraint::Min(1),
+                    Constraint::Min(3),
                     Constraint::Percentage(100),
-                    Constraint::Min(1)
+                    Constraint::Min(2)
                 ])
                 .split(centered_rect(
                     percent_x(f, 2.0),
-                    percent_y(f, 1.0),
+                    percent_y(f, 1.5),
                     f.size()));
             
             if app_lock.should_clear_screen {
                 clear_screen(f, &chunks);
+                app_lock.should_clear_screen = false;
             }
 
             let header_chunks = Layout::default()
@@ -164,21 +166,97 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                 ])       
                 .split(chunks[0]);
             
-            let header_name = Paragraph::new(Text::from(
-                format!("Login: {}", app_lock.active_user.as_ref().unwrap().name
+            let header_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded); 
+
+            let header_login = Paragraph::new(Text::from(
+                format!("\n  Login: {}", app_lock.active_user.as_ref().unwrap().name
             )));
-
-            f.render_widget(header_name, header_chunks[0]);
             
-            let balance_name = Paragraph::new(Text::from(
-                format!("Balance: {}", app_lock.active_user.as_ref().unwrap().balance
+            let header_balance = Paragraph::new(Text::from(
+                format!("\nBalance: {}$  ", app_lock.active_user.as_ref().unwrap().balance
             ))).alignment(Alignment::Right);
-            
-            f.render_widget(balance_name, header_chunks[1]);
 
-            let test = Paragraph::new(Text::from("Hello world, some text here"));
-            f.render_widget(test.clone(), chunks[1]);
-            f.render_widget(test, chunks[2]);
+            f.render_widget(header_login, header_chunks[0]);
+            f.render_widget(header_balance, header_chunks[1]);
+            f.render_widget(header_block, chunks[0]); 
+
+            let list_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Percentage(5),
+                    Constraint::Percentage(90),
+                    Constraint::Percentage(5)
+                ])
+                .split(chunks[1]);
+
+            let actions = List::new(app_lock.client_actions.clone()).highlight_style(Style::default().add_modifier(Modifier::REVERSED));
+            
+            f.render_stateful_widget(actions, list_chunks[1], &mut app_lock.client_action_list_state);
+
+            let help = Paragraph::new(Text::from(
+                "Choose an action to perform."
+            ))
+            .block(Block::default().borders(Borders::TOP));
+
+            f.render_widget(help, chunks[2]);
+
+            if let Some(popup) = app_lock.active_popup {
+                match popup {
+                    Popup::ViewInfo => {
+                        let popup_rect = centered_rect(
+                            percent_x(f, 1.0),
+                            percent_y(f, 1.0),
+                            f.size()
+                        );
+
+                        f.render_widget(Clear, popup_rect);
+                        
+                        let client_info_block = Block::default().borders(Borders::ALL).border_type(BorderType::QuadrantOutside);
+
+                        let active_user = app_lock.active_user.as_ref().unwrap();
+                        let client_info = Paragraph::new(vec![
+                            Line::from(Span::raw("Client Information")),
+                            Line::default(),
+                            Line::from(Span::raw(format!("Full name: {}", active_user.name))),
+                            Line::from(Span::raw(format!("C.I.: {}", active_user.ci))),
+                            Line::from(Span::raw(format!("Account Num.: {}", active_user.account_number))),
+                            Line::from(Span::raw(format!("Account Type: {:?}", active_user.account_type))),
+                            Line::from(Span::raw(format!("Balance: {}$", active_user.balance)))
+                        ])
+                        .alignment(Alignment::Center)
+                        .block(client_info_block);
+
+                        f.render_widget(client_info, popup_rect);
+                    },
+                    Popup::Deposit => {
+                        let popup_rect = centered_rect(
+                            percent_x(f, 1.0),
+                            percent_y(f, 0.3),
+                            f.size()
+                        );
+
+                        f.render_widget(Clear, popup_rect);
+
+                        let deposit_block = Block::default().borders(Borders::ALL).border_type(BorderType::Thick).title("Deposit amount");
+
+                        let deposit = Paragraph::new(Line::from(vec![
+                            Span::raw(" "),
+                            Span::raw(app_lock.input.0.value().to_string()),
+                        ]))
+                        .block(deposit_block)
+                        .alignment(Alignment::Left);
+
+                        f.render_widget(deposit, popup_rect);
+
+                        f.set_cursor(
+                            popup_rect.x
+                            + app_lock.input.0.visual_cursor() as u16
+                            + 2,
+                            popup_rect.y + 1);
+                    }
+                    _ => { unimplemented!("HERE"); }
+                }
+            }
         }
     }
 }
@@ -207,7 +285,7 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
 /// Uses an exponential function with parameters a > 0 and c > 0. 
 /// The multiplier param adjusts the rect size. Should be used with `centered_rect` function.
 fn percent_x(f: &mut Frame, multiplier: f32) -> u16 {
-    let result = ((multiplier * (125.00 * 0.99_f32.powi(f.size().width as i32))) + 1.0) as u16;
+    let result = ((((multiplier * 125.00) * 0.99_f32.powi(f.size().width as i32))) + 1.0) as u16;
     if result >= 100 { return 100; }
     else { return result; }
 }
