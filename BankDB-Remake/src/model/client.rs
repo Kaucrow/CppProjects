@@ -83,6 +83,7 @@ impl<'r> FromRow<'r, PgRow> for Transaction {
 pub struct Client {
     pub account_number: i32,
     pub username: String,
+    pub password_hash: String,
     pub name: String,
     pub ci: i32,
     pub account_type: AccountType,
@@ -96,6 +97,7 @@ impl Client {
         Client {
             account_number: 0,
             username: String::new(),
+            password_hash: String::new(),
             name: String::new(),
             ci: 0,
             account_type: AccountType::Current,
@@ -131,6 +133,7 @@ impl<'r> FromRow<'r, PgRow> for Client {
         Ok(Client {
             account_number: row.try_get("account_number")?,
             username: row.try_get("username")?,
+            password_hash: row.try_get("password")?,
             name: row.try_get("name")?,
             ci: row.try_get("ci")?,
             balance: row.try_get("balance")?,

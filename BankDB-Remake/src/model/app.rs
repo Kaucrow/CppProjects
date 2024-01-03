@@ -7,6 +7,7 @@ use crate::model::client::Client;
 pub enum Screen {
     Login,
     Client,
+    Admin,
 }
 
 #[derive(Copy, Clone)]
@@ -48,7 +49,7 @@ pub struct App {
     pub client_actions: [&'static str; 5],
     pub client_action_list_state: ListState,
     pub client_popups: HashMap<usize, Popup>,
-    pub help_text: String,
+    pub help_text: &'static str,
     pub timeout: HashMap<TimeoutType, Timer>,
     pub curr_screen: Screen,
     pub active_popup: Option<Popup>,
@@ -79,7 +80,7 @@ impl App {
                 (3, Popup::Transfer),
                 (4, Popup::ChangePsswd)
             ]),
-            help_text: String::new(),
+            help_text: "Choose an action to perform. Press Esc to go back.",
             timeout: HashMap::new(),
             curr_screen: Screen::Login,
             active_popup: None,
@@ -104,8 +105,9 @@ impl App {
             Screen::Client => {
                 self.curr_screen = Screen::Client;
                 self.input_mode = InputMode::Normal;
-                self.help_text = String::from("Choose an action to perform.")
+                self.help_text = "Choose an action to perform. Press Esc to go back."
             }
+            Screen::Admin => todo!("enter admin screen"),
             _ => { unimplemented!() }
         }
     }

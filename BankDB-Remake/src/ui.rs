@@ -264,7 +264,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                             + 2,
                             popup_rect[0].y + 1);
                     }
-                    Popup::Transfer => {
+                    Popup::Transfer | Popup::ChangePsswd => {
                         let popup_rect = centered_rect(
                             percent_x(f, 1.0),
                             percent_y(f, 0.9),
@@ -280,9 +280,23 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                             ])
                             .split(popup_rect.inner(&Margin::new(1, 1)));
                         
-                        let popup_block = Block::default().borders(Borders::ALL).border_type(BorderType::Thick).title("Transfer");
-                        let amount_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).title("Amount");
-                        let beneficiary_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).title("Beneficiary");
+                        let popup_block_title: &str;
+                        let upper_block_title: &str;
+                        let lower_block_title: &str;
+                        
+                        if let Some(Popup::Transfer) = app_lock.active_popup {
+                            popup_block_title = "Transfer";
+                            upper_block_title = "Amount";
+                            lower_block_title = "Beneficiary";
+                        } else {
+                            popup_block_title = "Change Password";
+                            upper_block_title = "Old Password";
+                            lower_block_title = "New Password";
+                        }
+
+                        let popup_block = Block::default().borders(Borders::ALL).border_type(BorderType::Thick).title(popup_block_title);
+                        let amount_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).title(upper_block_title);
+                        let beneficiary_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).title(lower_block_title);
 
                         let amount = Paragraph::new(Line::from(vec![
                             Span::raw(" "),
@@ -320,6 +334,9 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                     _ => { unimplemented!("popup ui not implemented"); }
                 }
             }
+        },
+        Screen::Admin => {
+            todo!("admin screen ui");
         }
     }
 }

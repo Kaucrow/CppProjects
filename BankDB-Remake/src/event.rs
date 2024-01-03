@@ -28,13 +28,12 @@ pub enum InputBlacklist {
 }
 
 /// Terminal events
-#[derive(Debug)]
+//#[derive(Debug)]
 pub enum Event {
     Quit,
     ExitPopup,
     TryLogin,
-    EnterAdminScreen,
-    EnterClientScreen,
+    EnterScreen(Screen),
     KeyInput(KeyEvent, InputBlacklist),
     SwitchInput,
     NextClientAction,
@@ -43,6 +42,7 @@ pub enum Event {
     Deposit,
     Withdraw,
     Transfer,
+    ChangePasswd,
     Resize,
     TimeoutStep(TimeoutType),
 }
@@ -121,14 +121,15 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                     match app_lock.active_popup {
                         Some(Popup::LoginSuccessful) => {
                             if let Some(user) = &app_lock.active_user {
-                                if user.name == "admin" { sender.send(Event::EnterAdminScreen) }
-                                else { sender.send(Event::EnterClientScreen) }
+                                if user.name == "admin" { sender.send(Event::EnterScreen(Screen::Admin)) }
+                                else { sender.send(Event::EnterScreen(Screen::Client)) }
                             } else {
                                 Ok(())
                             }.expect("could not send terminal event");
                         },
                         None => {
                             match key_event.code {
+                                KeyCode::Esc => sender.send(Event::Quit),
                                 KeyCode::Enter => sender.send(Event::TryLogin),
                                 KeyCode::Tab => sender.send(Event::SwitchInput),
                                 _ => sender.send(Event::KeyInput(key_event, InputBlacklist::None)),
@@ -170,8 +171,19 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                 }
                             }.expect("could not send terminal event");
                         },
+                        Some(Popup::ChangePsswd) => {
+                            match key_event.code {
+                                KeyCode::Esc => sender.send(Event::ExitPopup),
+                                KeyCode::Tab => sender.send(Event::SwitchInput),
+                                KeyCode::Enter => sender.send(Event::ChangePasswd),
+                                _ => sender.send(Event::KeyInput(key_event, InputBlacklist::None))
+                            }.expect("could not send terminal event");
+                        },
                         None => {
                             match key_event.code {
+                                KeyCode::Esc => {
+                                    sender.send(Event::EnterScreen(Screen::Login))
+                                }
                                 KeyCode::Char('k') | KeyCode::Up => {
                                     sender.send(Event::PreviousClientAction)
                                 }

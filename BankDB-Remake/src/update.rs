@@ -1,9 +1,9 @@
-use crossterm::event::{Event as CrosstermEvent, KeyEventKind, KeyCode};
+use crossterm::event::{Event as CrosstermEvent, KeyCode};
 use std::sync::{Arc, Mutex};
-use tui_input::{backend::crossterm::EventHandler, Input};
+use tui_input::backend::crossterm::EventHandler;
 use sqlx::{Row, Pool, Postgres, FromRow};
 use rust_decimal::Decimal;
-use bcrypt::verify;
+use bcrypt::{verify, hash};
 use anyhow::Result;
 use crate::{
     event::{ 
@@ -35,7 +35,7 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             app_lock.input.1.reset();
             app_lock.hold_popup = false;
             match app_lock.curr_screen {
-                Screen::Client => app_lock.help_text = String::from("Choose an action to perform."),
+                Screen::Client => app_lock.help_text = "Choose an action to perform. Press Esc to go back.",
                 _ => {}
             }
             Ok(())
@@ -76,8 +76,8 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             }
             Ok(())
         },
-        Event::EnterClientScreen => {
-            app.lock().unwrap().enter_screen(Screen::Client);
+        Event::EnterScreen(screen) => {
+            app.lock().unwrap().enter_screen(screen);
             Ok(())
         }
         Event::SwitchInput => {
@@ -144,7 +144,7 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             if let Some(selected) = app_lock.client_action_list_state.selected() {
                 app_lock.active_popup = Some(*app_lock.client_popups.get(&selected).unwrap_or_else(|| panic!("popup not found in client_popups")));
                 match app_lock.active_popup.unwrap() {
-                    Popup::Deposit | Popup::Withdraw | Popup::Transfer => app_lock.input_mode = InputMode::Editing(0),
+                    Popup::Deposit | Popup::Withdraw | Popup::Transfer | Popup::ChangePsswd => app_lock.input_mode = InputMode::Editing(0),
                     _ => {}
                 }
             }
@@ -152,7 +152,9 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
         },
         Event::Deposit | Event::Withdraw => {
             modify_balance(app, pool, event).await?;
-            app.lock().unwrap().input.0.reset();
+            let mut app_lock = app.lock().unwrap();
+            app_lock.input.0.reset();
+            app_lock.active_popup = None;
             Ok(())
         },
         Event::Transfer => {
@@ -160,7 +162,7 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             {
                 let mut app_lock = app.lock().unwrap();
                 if beneficiary == app_lock.active_user.as_ref().unwrap().username {
-                    app_lock.help_text = String::from("You can't transfer money to yourself.");
+                    app_lock.help_text = "You can't transfer money to yourself.";
                     app_lock.hold_popup = true;
                     return Ok(());
                 }
@@ -182,18 +184,47 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
                             .bind(beneficiary)
                             .execute(pool)
                             .await?;
-                        }
 
-                        app_lock.input.0.reset();
-                        app_lock.input.1.reset();
-                    }
+                            app_lock.input.0.reset();
+                            app_lock.input.1.reset();
+                            app_lock.active_popup = None;
+                        }
+                    },
                     None => {
                         let mut app_lock = app.lock().unwrap();
-                        app_lock.help_text = String::from("The beneficiary doesn't exist.");
+                        app_lock.help_text = "The beneficiary doesn't exist.";
                         app_lock.hold_popup = true;
                     }
                 }
             Ok(())
+        },
+        Event::ChangePasswd => {
+            let mut app_lock = app.lock().unwrap();
+            let curr_passwd = &app_lock.active_user.as_ref().unwrap().password_hash;
+            let curr_passwd_input = app_lock.input.0.value();
+
+            if verify(curr_passwd_input, curr_passwd).unwrap_or_else(|error| panic!("{}", error)) {
+                let new_password_hash = hash(
+                    app_lock.input.1.value(), 4).unwrap_or_else(|error| panic!("{}", error
+                ));
+
+                sqlx::query("UPDATE clients SET password = $1 WHERE username = $2")
+                    .bind(&new_password_hash)
+                    .bind(&app_lock.active_user.as_ref().unwrap().username)
+                    .execute(pool)
+                    .await?;
+
+                app_lock.active_user.as_mut().unwrap().password_hash = new_password_hash;
+
+                app_lock.input.0.reset();
+                app_lock.input.1.reset();
+                app_lock.active_popup = None;
+            } else {
+                app_lock.help_text = "Incorrect current password.";
+                app_lock.hold_popup = true;
+            }
+
+            Ok(())      
         },
         _ => { Ok(()) }
     }
@@ -207,7 +238,7 @@ async fn modify_balance(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event:
         app_lock.active_user.as_mut().unwrap().balance += amount_input;
     } else {
         if amount_input > app_lock.active_user.as_ref().unwrap().balance {
-            app_lock.help_text = String::from("You don't have enough money.");
+            app_lock.help_text = "You don't have enough money.";
             app_lock.hold_popup = true;
             return Ok(())
         } else {
@@ -221,6 +252,5 @@ async fn modify_balance(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event:
         .execute(pool)
         .await?;
 
-    app_lock.active_popup = None;
     Ok(())
 }
