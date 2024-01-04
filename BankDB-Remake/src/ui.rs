@@ -336,7 +336,52 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
             }
         },
         Screen::Admin => {
-            todo!("admin screen ui");
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Percentage(100),
+                    Constraint::Min(3)
+                ])
+                .split(centered_rect(
+                    percent_x(f, 2.0),
+                    percent_y(f, 1.5),
+                    f.size()
+                ));
+            
+            let main_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Percentage(30),
+                    Constraint::Percentage(70)
+                ])
+                .split(chunks[0]);
+
+            let left_chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Length(2),
+                    Constraint::Percentage(100)
+                ])
+                .split(main_chunks[0].inner(&Margin::new(1, 1)));
+            
+            let help_block = Block::default().borders(Borders::TOP);
+            let help = Paragraph::new(Line::from(
+                Span::raw(app_lock.help_text
+            )))
+            .block(help_block);
+
+            f.render_widget(help, chunks[1]);
+
+            let admin_title = Paragraph::new(Line::from(vec![
+                Span::raw(" Login: "),
+                Span::styled("Admin", Style::default().fg(Color::Yellow))
+            ]))
+            .block(Block::default().borders(Borders::BOTTOM));
+
+            f.render_widget(Block::default().borders(Borders::ALL), main_chunks[0]);
+            f.render_widget(admin_title, left_chunks[0]);
+
+            f.render_widget(Block::default().borders(Borders::ALL), main_chunks[1]);
         }
     }
 }

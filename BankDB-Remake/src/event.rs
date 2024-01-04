@@ -181,24 +181,27 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                         },
                         None => {
                             match key_event.code {
-                                KeyCode::Esc => {
-                                    sender.send(Event::EnterScreen(Screen::Login))
-                                }
-                                KeyCode::Char('k') | KeyCode::Up => {
-                                    sender.send(Event::PreviousClientAction)
-                                }
-                                KeyCode::Char('j') | KeyCode::Down => {
-                                    sender.send(Event::NextClientAction)
-                                }
-                                KeyCode::Enter => {
-                                    sender.send(Event::SelectAction)
-                                }
+                                KeyCode::Esc => sender.send(Event::EnterScreen(Screen::Login)),
+                                KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousClientAction),
+                                KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextClientAction),
+                                KeyCode::Enter => sender.send(Event::SelectAction),
                                 _ => { Ok(()) }
                             }.expect("could not send terminal event");
                         }
                         _ => { unimplemented!("popup not found in match block") }
                     }
                 },
+                Screen::Admin => {
+                    match app_lock.active_popup {
+                        None => {
+                            match key_event.code {
+                                KeyCode::Esc => sender.send(Event::EnterScreen(Screen::Login)),
+                                _ => Ok(())
+                            }.expect("could not send terminal event")
+                        }
+                        _ => todo!("popups on admin screen")
+                    }
+                }
                 _ => { unimplemented!("screen not found in match block") }
             }
         },

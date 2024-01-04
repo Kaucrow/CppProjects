@@ -107,7 +107,11 @@ impl App {
                 self.input_mode = InputMode::Normal;
                 self.help_text = "Choose an action to perform. Press Esc to go back."
             }
-            Screen::Admin => todo!("enter admin screen"),
+            Screen::Admin => {
+                self.curr_screen = Screen::Admin;
+                self.input_mode = InputMode::Normal;
+                self.help_text = "Choose a client or an action. Press Alt to switch windows. Press Esc to go back."
+            }
             _ => { unimplemented!() }
         }
     }
