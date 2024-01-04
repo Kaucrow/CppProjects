@@ -18,7 +18,8 @@ use crate::model::app::{
     Popup,
     Screen,
     TimeoutType,
-    InputMode,
+    ListType,
+    InputMode, ScreenSection,
 };
 
 #[derive(Debug)]
@@ -36,9 +37,10 @@ pub enum Event {
     EnterScreen(Screen),
     KeyInput(KeyEvent, InputBlacklist),
     SwitchInput,
-    NextClientAction,
-    PreviousClientAction,
-    SelectAction,
+    SwitchScreenSection,
+    NextListItem(ListType),
+    PreviousListItem(ListType),
+    SelectAction(ListType),
     Deposit,
     Withdraw,
     Transfer,
@@ -120,7 +122,7 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                 Screen::Login => {
                     match app_lock.active_popup {
                         Some(Popup::LoginSuccessful) => {
-                            if let Some(user) = &app_lock.active_user {
+                            if let Some(user) = &app_lock.client.active {
                                 if user.name == "admin" { sender.send(Event::EnterScreen(Screen::Admin)) }
                                 else { sender.send(Event::EnterScreen(Screen::Client)) }
                             } else {
@@ -182,9 +184,9 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                         None => {
                             match key_event.code {
                                 KeyCode::Esc => sender.send(Event::EnterScreen(Screen::Login)),
-                                KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousClientAction),
-                                KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextClientAction),
-                                KeyCode::Enter => sender.send(Event::SelectAction),
+                                KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::ClientAction)),
+                                KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::ClientAction)),
+                                KeyCode::Enter => sender.send(Event::SelectAction(ListType::ClientAction)),
                                 _ => { Ok(()) }
                             }.expect("could not send terminal event");
                         }
@@ -196,8 +198,21 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                         None => {
                             match key_event.code {
                                 KeyCode::Esc => sender.send(Event::EnterScreen(Screen::Login)),
+                                KeyCode::Tab => sender.send(Event::SwitchScreenSection),
                                 _ => Ok(())
-                            }.expect("could not send terminal event")
+                            }.expect("could not send terminal event");
+                            match app_lock.curr_screen_section {
+                                ScreenSection::Left => {
+                                    match key_event.code {
+                                        KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::AdminAction)),
+                                        KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::AdminAction)),
+                                        KeyCode::Enter => sender.send(Event::SelectAction(ListType::AdminAction)),
+                                        _ => { Ok(()) }
+                                    }.expect("could not send terminal event");
+                                }
+                                ScreenSection::Right => todo!(),
+                                _ => {}
+                            }
                         }
                         _ => todo!("popups on admin screen")
                     }

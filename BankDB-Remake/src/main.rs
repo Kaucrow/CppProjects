@@ -19,7 +19,7 @@ async fn main() -> Result<()> {
     let url = "postgres://postgres:postgresPass@localhost:5432/bank";
     let pool = sqlx::postgres::PgPool::connect(url).await?;
 
-    let app = App::new();
+    let app = App::default();
     let mut app_arc = Arc::new(Mutex::new(app));
 
     let backend = CrosstermBackend::new(std::io::stderr());

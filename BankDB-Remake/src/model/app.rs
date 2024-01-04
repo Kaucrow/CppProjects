@@ -18,7 +18,9 @@ pub enum Popup {
     Deposit,
     Withdraw,
     Transfer,
-    ChangePsswd
+    ChangePsswd,
+    FilterClients,
+    AddClient,
 }
 
 pub enum InputMode {
@@ -33,6 +35,17 @@ pub enum TimeoutType {
     Login,
 }
 
+pub enum ListType {
+    ClientAction,
+    AdminAction,
+}
+
+pub enum ScreenSection {
+    Main,
+    Left,
+    Right,
+}
+
 pub struct InputFields(pub Input, pub Input);
 
 pub struct Timer {
@@ -45,51 +58,91 @@ pub struct App {
     pub input: InputFields,
     pub input_mode: InputMode,
     pub failed_logins: u8,
-    pub active_user: Option<Client>,
-    pub client_actions: [&'static str; 5],
-    pub client_action_list_state: ListState,
-    pub client_popups: HashMap<usize, Popup>,
+    pub client: ClientData,
+    pub admin: AdminData,
     pub help_text: &'static str,
     pub timeout: HashMap<TimeoutType, Timer>,
     pub curr_screen: Screen,
+    pub curr_screen_section: ScreenSection,
     pub active_popup: Option<Popup>,
     pub hold_popup: bool,
     pub should_clear_screen: bool,
     pub should_quit: bool,
 }
 
-impl App {
-    pub fn new() -> Self {
-        App {
-            input: InputFields(Input::default(), Input::default()),
-            input_mode: InputMode::Normal,
-            failed_logins: 0,
-            active_user: None,
-            client_actions: [
+pub struct ClientData {
+    pub active: Option<Client>,
+    pub actions: Vec<&'static str>,
+    pub action_list_state: ListState,
+    pub popups: HashMap<usize, Popup>,
+}
+
+impl std::default::Default for ClientData {
+    fn default() -> Self {
+        ClientData {
+            active: None,
+            actions: vec![
                 "View info",
                 "Make a deposit",
                 "Make a withdrawal",
                 "Make a transfer",
                 "Change password"
             ],
-            client_action_list_state: ListState::default(),
-            client_popups: HashMap::from([
+            action_list_state: ListState::default(),
+            popups: HashMap::from([
                 (0, Popup::ViewInfo),
                 (1, Popup::Deposit),
                 (2, Popup::Withdraw),
                 (3, Popup::Transfer),
                 (4, Popup::ChangePsswd)
-            ]),
+            ])
+        }
+    }
+}
+
+pub struct AdminData {
+    pub actions: Vec<&'static str>,
+    pub action_list_state: ListState,
+    pub popups: HashMap<usize, Popup>,
+}
+
+impl std::default::Default for AdminData {
+    fn default() -> Self {
+        AdminData {
+            actions: vec![
+                "Filter clients",
+                "Add a client"
+            ],
+            action_list_state: ListState::default(),
+            popups: HashMap::from([
+                (0, Popup::FilterClients),
+                (1, Popup::AddClient)
+            ])
+        }
+    }
+}
+
+impl std::default::Default for App {
+    fn default() -> Self {
+        App {
+            input: InputFields(Input::default(), Input::default()),
+            input_mode: InputMode::Normal,
+            failed_logins: 0,
+            client: ClientData::default(),
+            admin: AdminData::default(),
             help_text: "Choose an action to perform. Press Esc to go back.",
             timeout: HashMap::new(),
             curr_screen: Screen::Login,
+            curr_screen_section: ScreenSection::Main,
             active_popup: None,
             hold_popup: false,
             should_clear_screen: false,
             should_quit: false,
         }
     }
- 
+}
+
+impl App {
     pub fn enter_screen(&mut self, screen: Screen) {
         self.should_clear_screen = true;
         self.active_popup = None;
@@ -98,17 +151,20 @@ impl App {
         match screen {
             Screen::Login => {
                 self.curr_screen = Screen::Login;
+                self.curr_screen_section = ScreenSection::Main;
                 self.input_mode = InputMode::Editing(0);
                 self.failed_logins = 0;
-                self.active_user = None;
+                self.client.active = None;
             }
             Screen::Client => {
                 self.curr_screen = Screen::Client;
+                self.curr_screen_section = ScreenSection::Main;
                 self.input_mode = InputMode::Normal;
                 self.help_text = "Choose an action to perform. Press Esc to go back."
             }
             Screen::Admin => {
                 self.curr_screen = Screen::Admin;
+                self.curr_screen_section = ScreenSection::Left;
                 self.input_mode = InputMode::Normal;
                 self.help_text = "Choose a client or an action. Press Alt to switch windows. Press Esc to go back."
             }
@@ -116,10 +172,15 @@ impl App {
         }
     }
 
-    pub fn next_client_action(&mut self) {
-        let i = match self.client_action_list_state.selected() {
+    pub fn next_list_item(&mut self, list_type: ListType) {
+        let (list_state, items) = match list_type {
+            ListType::ClientAction => (&mut self.client.action_list_state, &self.client.actions),
+            ListType::AdminAction => (&mut self.admin.action_list_state, &self.admin.actions)
+        };
+
+        let i = match list_state.selected() {
             Some(i) => {
-                if i >= self.client_actions.len() - 1 {
+                if i >= items.len() - 1 {
                     0
                 } else {
                     i + 1
@@ -127,21 +188,26 @@ impl App {
             }
             None => 0,
         };
-        self.client_action_list_state.select(Some(i));
+        list_state.select(Some(i));
     }
     
-    pub fn previous_client_action(&mut self) {
-        let i = match self.client_action_list_state.selected() {
+    pub fn previous_list_item(&mut self, list_type: ListType) {
+        let (list_state, items) = match list_type {
+            ListType::ClientAction => (&mut self.client.action_list_state, &self.client.actions),
+            ListType::AdminAction => (&mut self.admin.action_list_state, &self.admin.actions)
+        };
+
+        let i = match list_state.selected() {
             Some(i) => {
                 if i == 0 {
-                    self.client_actions.len() - 1
+                    items.len() - 1
                 } else {
                     i - 1
                 }
             }
             None => 0,
         };
-        self.client_action_list_state.select(Some(i));
+        list_state.select(Some(i));
     }
 
     /// The timeout tick rate here should be equal or greater to the EventHandler tick rate.

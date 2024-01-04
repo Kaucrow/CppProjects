@@ -169,11 +169,11 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
             let header_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded); 
 
             let header_login = Paragraph::new(Text::from(
-                format!("\n  Login: {}", app_lock.active_user.as_ref().unwrap().name
+                format!("\n  Login: {}", app_lock.client.active.as_ref().unwrap().name
             )));
             
             let header_balance = Paragraph::new(Text::from(
-                format!("\nBalance: {}$  ", app_lock.active_user.as_ref().unwrap().balance
+                format!("\nBalance: {}$  ", app_lock.client.active.as_ref().unwrap().balance
             ))).alignment(Alignment::Right);
 
             f.render_widget(header_login, header_chunks[0]);
@@ -189,9 +189,9 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                 ])
                 .split(chunks[1]);
 
-            let actions = List::new(app_lock.client_actions.clone()).highlight_style(Style::default().add_modifier(Modifier::REVERSED));
+            let actions = List::new(app_lock.client.actions.clone()).highlight_style(Style::default().add_modifier(Modifier::REVERSED));
             
-            f.render_stateful_widget(actions, list_chunks[1], &mut app_lock.client_action_list_state);
+            f.render_stateful_widget(actions, list_chunks[1], &mut app_lock.client.action_list_state);
 
             let help_text = Paragraph::new(Text::from(
                 format!("{}", app_lock.help_text)
@@ -213,7 +213,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                         
                         let client_info_block = Block::default().borders(Borders::ALL).border_type(BorderType::QuadrantOutside);
 
-                        let active_user = app_lock.active_user.as_ref().unwrap();
+                        let active_user = app_lock.client.active.as_ref().unwrap();
                         let client_info = Paragraph::new(vec![
                             Line::from(Span::raw("Client Information")),
                             Line::default(),
@@ -362,7 +362,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                     Constraint::Length(2),
                     Constraint::Percentage(100)
                 ])
-                .split(main_chunks[0].inner(&Margin::new(1, 1)));
+                .split(main_chunks[0].inner(&Margin::new(2, 1)));
             
             let help_block = Block::default().borders(Borders::TOP);
             let help = Paragraph::new(Line::from(
@@ -382,6 +382,10 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
             f.render_widget(admin_title, left_chunks[0]);
 
             f.render_widget(Block::default().borders(Borders::ALL), main_chunks[1]);
+            
+            let actions = List::new(app_lock.admin.actions.clone()).highlight_style(Style::default().add_modifier(Modifier::REVERSED));
+
+            f.render_stateful_widget(actions, left_chunks[1], &mut app_lock.admin.action_list_state);
         }
     }
 }
