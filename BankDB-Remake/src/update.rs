@@ -19,6 +19,8 @@ use crate::{
             InputMode,
             ListType,
             TimeoutType,
+            ScreenSectionType,
+            Filter,
         },
         client::Client,
     }
@@ -91,13 +93,18 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             }
             Ok(())
         },
-        Event::SwitchScreenSection => {
+        Event::SwitchScreenSection(screen_section_type) => {
             let mut app_lock = app.lock().unwrap();
 
-            if let ScreenSection::Left = app_lock.curr_screen_section {
-                app_lock.curr_screen_section = ScreenSection::Right;
+            let curr_screen_section = match screen_section_type {
+                ScreenSectionType::AdminMain => &mut app_lock.curr_screen_section,
+                ScreenSectionType::AdminFilters => &mut app_lock.admin.filter_screen_section,
+            };
+
+            if let ScreenSection::Left = curr_screen_section {
+                *curr_screen_section = ScreenSection::Right;
             } else {
-                app_lock.curr_screen_section = ScreenSection::Left;
+                *curr_screen_section = ScreenSection::Left;
             }
             Ok(())
         },
@@ -135,7 +142,16 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
                             } 
                         }
                     }
-                    _ => { unimplemented!("blacklist isn't implemented") }
+                    InputBlacklist::Alphabetic => {
+                        if !char.is_alphabetic() {
+                            return Ok(())
+                        }
+                    }
+                    InputBlacklist::Numeric => {
+                        if !char.is_numeric() {
+                            return Ok(())
+                        }
+                    }
                 }
             };
  
@@ -171,7 +187,6 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
         },
         Event::Deposit | Event::Withdraw => {
             modify_balance(app, pool, event).await?;
-            let mut app_lock = app.lock().unwrap();
             Ok(())
         },
         Event::Transfer => {
@@ -243,6 +258,31 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
 
             Ok(())      
         },
+        Event::EditFilter => {
+            let mut app_lock = app.lock().unwrap();
+            match app_lock.admin.active_filter {
+                Some(Filter::Username) | Some(Filter::Name) |
+                Some(Filter::Ci) | Some(Filter::Balance) | Some(Filter::AccNum) =>
+                app_lock.input_mode = InputMode::Editing(0),
+                _ => {}
+            }
+            Ok(())
+        },
+        Event::RegisterFilter => {
+            let mut app_lock = app.lock().unwrap();
+            let filter = app_lock.admin.active_filter.unwrap();
+
+            match filter {
+                Filter::Username | Filter::Name |
+                Filter::Ci | Filter::Balance | Filter::AccNum => {
+                    let input_value = app_lock.input.0.value().to_string();
+                    app_lock.admin.applied_filters.insert(filter, Some(input_value));
+                }
+                _ => {}
+            }
+
+            Ok(())
+        }
         _ => { Ok(()) }
     }
 }

@@ -23,6 +23,17 @@ pub enum Popup {
     AddClient,
 }
 
+#[derive(Clone, Copy, Eq, PartialEq, Hash)]
+pub enum Filter {
+    Username,
+    Name,
+    Ci,
+    AccNum,
+    Balance,
+    AccType,
+    AccStatus,
+}
+
 pub enum InputMode {
     Normal,
     /// The value represents the InputField being edited
@@ -45,6 +56,11 @@ pub enum ScreenSection {
     Main,
     Left,
     Right,
+}
+
+pub enum ScreenSectionType {
+    AdminMain,
+    AdminFilters,
 }
 
 pub struct InputFields(pub Input, pub Input);
@@ -106,8 +122,11 @@ pub struct AdminData {
     pub action_list_state: ListState,
     pub popups: HashMap<usize, Popup>,
     pub filters: Vec<&'static str>,
+    pub filter_sidescreens: HashMap<usize, Filter>,
     pub filter_list_state: ListState,
     pub filter_screen_section: ScreenSection,
+    pub active_filter: Option<Filter>,
+    pub applied_filters: HashMap<Filter, Option<String>>
 }
 
 impl std::default::Default for AdminData {
@@ -131,8 +150,27 @@ impl std::default::Default for AdminData {
                 "Account type",
                 "Account status",
             ],
+            filter_sidescreens: HashMap::from([
+                (0, Filter::Username),
+                (1, Filter::Name),
+                (2, Filter::Ci),
+                (3, Filter::AccNum),
+                (4, Filter::Balance),
+                (5, Filter::AccType),
+                (6, Filter::AccStatus),
+            ]),
             filter_list_state: ListState::default(),
             filter_screen_section: ScreenSection::Left,
+            active_filter: None,
+            applied_filters: HashMap::from([
+                (Filter::Username, None),
+                (Filter::Name, None),
+                (Filter::Ci, None),
+                (Filter::AccNum, None),
+                (Filter::Balance, None),
+                (Filter::AccType, None),
+                (Filter::AccStatus, None),
+            ])
         }
     }
 }
@@ -205,6 +243,19 @@ impl App {
             None => 0,
         };
         list_state.select(Some(i));
+
+        if let ListType::ClientFilters = list_type {
+            let filter = *self.admin.filter_sidescreens.get(&i)
+                .unwrap_or_else(|| panic!("sidescreen not found in filter sidescreens"));
+
+            self.admin.active_filter = Some(filter);
+            
+            if let Some(value) = self.admin.applied_filters.get(&filter).unwrap() {
+                self.input.0 = value.clone().into();
+            } else {
+                self.input.0.reset();
+            }
+        }
     }
     
     pub fn previous_list_item(&mut self, list_type: ListType) {
@@ -225,6 +276,19 @@ impl App {
             None => 0,
         };
         list_state.select(Some(i));
+        
+        if let ListType::ClientFilters = list_type {
+            let filter = *self.admin.filter_sidescreens.get(&i)
+                .unwrap_or_else(|| panic!("sidescreen not found in filter sidescreens"));
+
+            self.admin.active_filter = Some(filter);
+            
+            if let Some(value) = self.admin.applied_filters.get(&filter).unwrap() {
+                self.input.0 = value.clone().into();
+            } else {
+                self.input.0.reset();
+            }
+        }
     }
 
     /// The timeout tick rate here should be equal or greater to the EventHandler tick rate.

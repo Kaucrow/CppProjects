@@ -6,7 +6,6 @@ use crossterm::event::{
     KeyEvent,
     KeyModifiers,
 };
-use rust_decimal::Decimal;
 use std::{
     sync::{mpsc, Arc, Mutex},
     thread,
@@ -19,13 +18,18 @@ use crate::model::app::{
     Screen,
     TimeoutType,
     ListType,
-    InputMode, ScreenSection,
+    InputMode,
+    ScreenSection,
+    ScreenSectionType,
+    Filter,
 };
 
 #[derive(Debug)]
 pub enum InputBlacklist {
     None,
     Money,
+    Alphabetic,
+    Numeric,
 }
 
 /// Terminal events
@@ -37,7 +41,7 @@ pub enum Event {
     EnterScreen(Screen),
     KeyInput(KeyEvent, InputBlacklist),
     SwitchInput,
-    SwitchScreenSection,
+    SwitchScreenSection(ScreenSectionType),
     NextListItem(ListType),
     PreviousListItem(ListType),
     SelectAction(ListType),
@@ -45,6 +49,9 @@ pub enum Event {
     Withdraw,
     Transfer,
     ChangePasswd,
+    EditFilter,
+    ExitEditFilter,
+    RegisterFilter,
     Resize,
     TimeoutStep(TimeoutType),
 }
@@ -200,9 +207,42 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                 ScreenSection::Left => {
                                     match key_event.code {
                                         KeyCode::Esc => sender.send(Event::ExitPopup),
+                                        KeyCode::Enter => {
+                                            sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminFilters)).expect("could not send terminal event");
+                                            sender.send(Event::EditFilter)
+                                        }
                                         KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::ClientFilters)),
                                         KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::ClientFilters)),
                                         _ => Ok(())
+                                    }.expect("could not send terminal event");
+                                }
+                                ScreenSection::Right => {
+                                    match key_event.code {
+                                        KeyCode::Esc => {
+                                            sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminFilters)).expect("could not send terminal event");
+                                            sender.send(Event::ExitEditFilter)
+                                        }
+                                        KeyCode::Enter => {
+                                            sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminFilters)).expect("could not send terminal event");
+                                            sender.send(Event::RegisterFilter)
+                                        }
+                                        _ => Ok(())
+                                    }.expect("could not send terminal event");
+
+                                    match app_lock.admin.active_filter {
+                                        Some(Filter::Username) => {
+                                            sender.send(Event::KeyInput(key_event, InputBlacklist::None))
+                                        }
+                                        Some(Filter::Name) => {
+                                            sender.send(Event::KeyInput(key_event, InputBlacklist::Alphabetic))
+                                        }
+                                        Some(Filter::Ci) | Some(Filter::AccNum) => {
+                                            sender.send(Event::KeyInput(key_event, InputBlacklist::Numeric))
+                                        }
+                                        Some(Filter::Balance) => {
+                                            sender.send(Event::KeyInput(key_event, InputBlacklist::Money))
+                                        }
+                                        _ => todo!("filter sidescreen events")
                                     }.expect("could not send terminal event");
                                 }
                                 _ => {}
@@ -211,7 +251,7 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                         None => {
                             match key_event.code {
                                 KeyCode::Esc => sender.send(Event::EnterScreen(Screen::Login)),
-                                KeyCode::Tab => sender.send(Event::SwitchScreenSection),
+                                KeyCode::Tab => sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminMain)),
                                 _ => Ok(())
                             }.expect("could not send terminal event");
                             match app_lock.curr_screen_section {

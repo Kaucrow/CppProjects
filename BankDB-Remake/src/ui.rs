@@ -11,7 +11,7 @@ use crate::model::{app::{
     Popup,
     Screen,
     InputMode,
-    TimeoutType
+    TimeoutType, Filter
 }, client};
 
 pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
@@ -413,6 +413,66 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
 
                     f.render_stateful_widget(filters, popup_chunks[0], &mut app_lock.admin.filter_list_state);
                     f.render_widget(input_block, popup_chunks[1]);
+
+                    match app_lock.admin.active_filter {
+                        Some(Filter::Username) | Some(Filter::Name) |
+                        Some(Filter::Ci) | Some(Filter::AccNum) |
+                        Some(Filter::Balance) => {
+                            let input_rect = centered_rect(
+                                percent_x(f, 2.0),
+                                percent_y(f, 0.5),
+                                popup_chunks[1]);
+                            
+                            let input_block = Block::default().borders(Borders::BOTTOM).border_type(BorderType::Thick).title("Input");
+
+                            let input = Paragraph::new(Line::from(
+                                Span::raw(app_lock.input.0.value())
+                            ))
+                            .block(input_block);
+
+                            f.render_widget(input, input_rect);
+                        }
+                        Some(Filter::AccType) | Some(Filter::AccStatus) => {
+                            let options_rect = centered_rect(
+                                percent_x(f, 2.0),
+                                percent_y(f, 1.0),
+                                popup_chunks[1]);
+
+                            let options_chunks = Layout::default()
+                                .direction(Direction::Vertical)
+                                .constraints([
+                                    Constraint::Min(3),
+                                    Constraint::Percentage(100),
+                                    Constraint::Min(3),
+                                ])
+                                .split(options_rect);
+
+                            let option_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded);
+                            
+                            let (option1_text, option2_text) = match app_lock.admin.active_filter {
+                                Some(Filter::AccType) => ("Current", "Debit"),
+                                Some(Filter::AccStatus) => ("Suspended", "Not suspended"),
+                                _ => panic!()
+                            };
+
+                            let option1 = Paragraph::new(Line::from(
+                                Span::raw(format!("{}", option1_text))
+                            ))
+                            .block(option_block.clone())
+                            .alignment(Alignment::Center);
+                            
+                            let option2 = Paragraph::new(Line::from(
+                                Span::raw(format!("{}", option2_text))
+                            ))
+                            .block(option_block)
+                            .alignment(Alignment::Center);
+
+                            f.render_widget(option1, options_chunks[0]);
+                            f.render_widget(option2, options_chunks[2]);
+                        }
+                        None => {}
+                        _ => { todo!("filter sidescreen") }
+                    }
                 }
                 Some(Popup::AddClient) => todo!("add client popup"),
                 _ => {}
