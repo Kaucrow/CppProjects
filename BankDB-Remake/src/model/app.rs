@@ -38,6 +38,7 @@ pub enum TimeoutType {
 pub enum ListType {
     ClientAction,
     AdminAction,
+    ClientFilters,
 }
 
 pub enum ScreenSection {
@@ -104,6 +105,9 @@ pub struct AdminData {
     pub actions: Vec<&'static str>,
     pub action_list_state: ListState,
     pub popups: HashMap<usize, Popup>,
+    pub filters: Vec<&'static str>,
+    pub filter_list_state: ListState,
+    pub filter_screen_section: ScreenSection,
 }
 
 impl std::default::Default for AdminData {
@@ -117,7 +121,18 @@ impl std::default::Default for AdminData {
             popups: HashMap::from([
                 (0, Popup::FilterClients),
                 (1, Popup::AddClient)
-            ])
+            ]),
+            filters: vec![
+                "Username",
+                "Name",
+                "C.I.",
+                "Account number",
+                "Balance",
+                "Account type",
+                "Account status",
+            ],
+            filter_list_state: ListState::default(),
+            filter_screen_section: ScreenSection::Left,
         }
     }
 }
@@ -175,7 +190,8 @@ impl App {
     pub fn next_list_item(&mut self, list_type: ListType) {
         let (list_state, items) = match list_type {
             ListType::ClientAction => (&mut self.client.action_list_state, &self.client.actions),
-            ListType::AdminAction => (&mut self.admin.action_list_state, &self.admin.actions)
+            ListType::AdminAction => (&mut self.admin.action_list_state, &self.admin.actions),
+            ListType::ClientFilters => (&mut self.admin.filter_list_state, &self.admin.filters)
         };
 
         let i = match list_state.selected() {
@@ -194,7 +210,8 @@ impl App {
     pub fn previous_list_item(&mut self, list_type: ListType) {
         let (list_state, items) = match list_type {
             ListType::ClientAction => (&mut self.client.action_list_state, &self.client.actions),
-            ListType::AdminAction => (&mut self.admin.action_list_state, &self.admin.actions)
+            ListType::AdminAction => (&mut self.admin.action_list_state, &self.admin.actions),
+            ListType::ClientFilters => (&mut self.admin.filter_list_state, &self.admin.filters)
         };
 
         let i = match list_state.selected() {

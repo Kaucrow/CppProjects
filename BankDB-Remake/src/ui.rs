@@ -200,139 +200,137 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
 
             f.render_widget(help_text, chunks[2]);
 
-            if let Some(popup) = app_lock.active_popup {
-                match popup {
-                    Popup::ViewInfo => {
-                        let popup_rect = centered_rect(
-                            percent_x(f, 1.0),
-                            percent_y(f, 1.0),
-                            f.size()
-                        );
+            match app_lock.active_popup {
+                Some(Popup::ViewInfo) => {
+                    let popup_rect = centered_rect(
+                        percent_x(f, 1.0),
+                        percent_y(f, 1.0),
+                        f.size()
+                    );
 
-                        f.render_widget(Clear, popup_rect);
-                        
-                        let client_info_block = Block::default().borders(Borders::ALL).border_type(BorderType::QuadrantOutside);
+                    f.render_widget(Clear, popup_rect);
+                    
+                    let client_info_block = Block::default().borders(Borders::ALL).border_type(BorderType::QuadrantOutside);
 
-                        let active_user = app_lock.client.active.as_ref().unwrap();
-                        let client_info = Paragraph::new(vec![
-                            Line::from(Span::raw("Client Information")),
-                            Line::default(),
-                            Line::from(Span::raw(format!("Full name: {}", active_user.name))),
-                            Line::from(Span::raw(format!("C.I.: {}", active_user.ci))),
-                            Line::from(Span::raw(format!("Account Num.: {}", active_user.account_number))),
-                            Line::from(Span::raw(format!("Account Type: {:?}", active_user.account_type))),
-                            Line::from(Span::raw(format!("Balance: {}$", active_user.balance)))
-                        ])
-                        .alignment(Alignment::Center)
-                        .block(client_info_block);
+                    let active_user = app_lock.client.active.as_ref().unwrap();
+                    let client_info = Paragraph::new(vec![
+                        Line::from(Span::raw("Client Information")),
+                        Line::default(),
+                        Line::from(Span::raw(format!("Full name: {}", active_user.name))),
+                        Line::from(Span::raw(format!("C.I.: {}", active_user.ci))),
+                        Line::from(Span::raw(format!("Account Num.: {}", active_user.account_number))),
+                        Line::from(Span::raw(format!("Account Type: {:?}", active_user.account_type))),
+                        Line::from(Span::raw(format!("Balance: {}$", active_user.balance)))
+                    ])
+                    .alignment(Alignment::Center)
+                    .block(client_info_block);
 
-                        f.render_widget(client_info, popup_rect);
-                    },
-                    Popup::Deposit | Popup::Withdraw => {
-                        let popup_rect = Layout::default()
-                            .direction(Direction::Vertical)
-                            .constraints([
-                                Constraint::Length(3),
-                                Constraint::Percentage(100)
-                            ]).split(centered_rect(
-                            percent_x(f, 1.0),
-                            percent_y(f, 0.4),
-                            f.size())
-                        );
+                    f.render_widget(client_info, popup_rect);
+                },
+                Some(Popup::Deposit) | Some(Popup::Withdraw) => {
+                    let popup_rect = Layout::default()
+                        .direction(Direction::Vertical)
+                        .constraints([
+                            Constraint::Length(3),
+                            Constraint::Percentage(100)
+                        ]).split(centered_rect(
+                        percent_x(f, 1.0),
+                        percent_y(f, 0.4),
+                        f.size())
+                    );
 
-                        f.render_widget(Clear, popup_rect[0]);
+                    f.render_widget(Clear, popup_rect[0]);
 
-                        let title = {
-                            if let Some(Popup::Deposit) = app_lock.active_popup { "Deposit amount" }
-                            else { "Withdraw amount" }
-                        };
+                    let title = {
+                        if let Some(Popup::Deposit) = app_lock.active_popup { "Deposit amount" }
+                        else { "Withdraw amount" }
+                    };
 
-                        let deposit_block = Block::default().borders(Borders::ALL).border_type(BorderType::Thick).title(title);
+                    let deposit_block = Block::default().borders(Borders::ALL).border_type(BorderType::Thick).title(title);
 
-                        let deposit = Paragraph::new(Line::from(vec![
-                            Span::raw(" "),
-                            Span::raw(app_lock.input.0.value()),
-                        ]))
-                        .block(deposit_block)
-                        .alignment(Alignment::Left);
+                    let deposit = Paragraph::new(Line::from(vec![
+                        Span::raw(" "),
+                        Span::raw(app_lock.input.0.value()),
+                    ]))
+                    .block(deposit_block)
+                    .alignment(Alignment::Left);
 
-                        f.render_widget(deposit, popup_rect[0]);
+                    f.render_widget(deposit, popup_rect[0]);
 
-                        f.set_cursor(
-                            popup_rect[0].x
-                            + app_lock.input.0.visual_cursor() as u16
-                            + 2,
-                            popup_rect[0].y + 1);
-                    }
-                    Popup::Transfer | Popup::ChangePsswd => {
-                        let popup_rect = centered_rect(
-                            percent_x(f, 1.0),
-                            percent_y(f, 0.9),
-                            f.size()
-                        );
-
-                        let popup_chunks = Layout::default()
-                            .direction(Direction::Vertical)
-                            .constraints([
-                                Constraint::Min(3),
-                                Constraint::Length(1),
-                                Constraint::Min(3),
-                            ])
-                            .split(popup_rect.inner(&Margin::new(1, 1)));
-                        
-                        let popup_block_title: &str;
-                        let upper_block_title: &str;
-                        let lower_block_title: &str;
-                        
-                        if let Some(Popup::Transfer) = app_lock.active_popup {
-                            popup_block_title = "Transfer";
-                            upper_block_title = "Amount";
-                            lower_block_title = "Beneficiary";
-                        } else {
-                            popup_block_title = "Change Password";
-                            upper_block_title = "Old Password";
-                            lower_block_title = "New Password";
-                        }
-
-                        let popup_block = Block::default().borders(Borders::ALL).border_type(BorderType::Thick).title(popup_block_title);
-                        let amount_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).title(upper_block_title);
-                        let beneficiary_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).title(lower_block_title);
-
-                        let amount = Paragraph::new(Line::from(vec![
-                            Span::raw(" "),
-                            Span::raw(app_lock.input.0.value())
-                        ]))
-                        .block(amount_block);
-                        
-                        let beneficiary = Paragraph::new(Line::from(vec![
-                            Span::raw(" "),
-                            Span::raw(app_lock.input.1.value())
-                        ]))
-                        .block(beneficiary_block);
-            
-                        if let InputMode::Editing(field) = app_lock.input_mode {
-                            if field == 0 {
-                                f.set_cursor(popup_chunks[0].x
-                                                + app_lock.input.0.visual_cursor() as u16
-                                                + 2,
-                                            popup_chunks[0].y + 1,
-                                            );
-                            } else {
-                                f.set_cursor(popup_chunks[2].x
-                                                + app_lock.input.1.visual_cursor() as u16
-                                                + 2,
-                                            popup_chunks[2].y + 1,
-                                            );
-                            }
-                        }
-                        
-                        f.render_widget(Clear, popup_rect);
-                        f.render_widget(popup_block, popup_rect);
-                        f.render_widget(amount, popup_chunks[0]);
-                        f.render_widget(beneficiary, popup_chunks[2]);
-                    }
-                    _ => { unimplemented!("popup ui not implemented"); }
+                    f.set_cursor(
+                        popup_rect[0].x
+                        + app_lock.input.0.visual_cursor() as u16
+                        + 2,
+                        popup_rect[0].y + 1);
                 }
+                Some(Popup::Transfer) | Some(Popup::ChangePsswd) => {
+                    let popup_rect = centered_rect(
+                        percent_x(f, 1.0),
+                        percent_y(f, 0.9),
+                        f.size()
+                    );
+
+                    let popup_chunks = Layout::default()
+                        .direction(Direction::Vertical)
+                        .constraints([
+                            Constraint::Min(3),
+                            Constraint::Length(1),
+                            Constraint::Min(3),
+                        ])
+                        .split(popup_rect.inner(&Margin::new(1, 1)));
+                    
+                    let popup_block_title: &str;
+                    let upper_block_title: &str;
+                    let lower_block_title: &str;
+                    
+                    if let Some(Popup::Transfer) = app_lock.active_popup {
+                        popup_block_title = "Transfer";
+                        upper_block_title = "Amount";
+                        lower_block_title = "Beneficiary";
+                    } else {
+                        popup_block_title = "Change Password";
+                        upper_block_title = "Old Password";
+                        lower_block_title = "New Password";
+                    }
+
+                    let popup_block = Block::default().borders(Borders::ALL).border_type(BorderType::Thick).title(popup_block_title);
+                    let amount_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).title(upper_block_title);
+                    let beneficiary_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).title(lower_block_title);
+
+                    let amount = Paragraph::new(Line::from(vec![
+                        Span::raw(" "),
+                        Span::raw(app_lock.input.0.value())
+                    ]))
+                    .block(amount_block);
+                    
+                    let beneficiary = Paragraph::new(Line::from(vec![
+                        Span::raw(" "),
+                        Span::raw(app_lock.input.1.value())
+                    ]))
+                    .block(beneficiary_block);
+        
+                    if let InputMode::Editing(field) = app_lock.input_mode {
+                        if field == 0 {
+                            f.set_cursor(popup_chunks[0].x
+                                            + app_lock.input.0.visual_cursor() as u16
+                                            + 2,
+                                        popup_chunks[0].y + 1,
+                                        );
+                        } else {
+                            f.set_cursor(popup_chunks[2].x
+                                            + app_lock.input.1.visual_cursor() as u16
+                                            + 2,
+                                        popup_chunks[2].y + 1,
+                                        );
+                        }
+                    }
+                    
+                    f.render_widget(Clear, popup_rect);
+                    f.render_widget(popup_block, popup_rect);
+                    f.render_widget(amount, popup_chunks[0]);
+                    f.render_widget(beneficiary, popup_chunks[2]);
+                }
+                _ => {}
             }
         },
         Screen::Admin => {
@@ -386,6 +384,39 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
             let actions = List::new(app_lock.admin.actions.clone()).highlight_style(Style::default().add_modifier(Modifier::REVERSED));
 
             f.render_stateful_widget(actions, left_chunks[1], &mut app_lock.admin.action_list_state);
+            
+            match app_lock.active_popup {
+                Some(Popup::FilterClients) => {
+                    let popup_rect = centered_rect(
+                        percent_x(f, 1.3),
+                        percent_y(f, 1.0),
+                        f.size()
+                    );
+
+                    f.render_widget(Clear, popup_rect);
+
+                    let popup_chunks = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .constraints([
+                            Constraint::Percentage(35),
+                            Constraint::Percentage(65),
+                        ])
+                        .split(popup_rect);
+
+                    let filters_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded);
+                    
+                    let input_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded);
+                    
+                    let filters = List::new(app_lock.admin.filters.clone())
+                        .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
+                        .block(filters_block);
+
+                    f.render_stateful_widget(filters, popup_chunks[0], &mut app_lock.admin.filter_list_state);
+                    f.render_widget(input_block, popup_chunks[1]);
+                }
+                Some(Popup::AddClient) => todo!("add client popup"),
+                _ => {}
+            }
         }
     }
 }

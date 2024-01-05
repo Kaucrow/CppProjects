@@ -187,7 +187,7 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                 KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::ClientAction)),
                                 KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::ClientAction)),
                                 KeyCode::Enter => sender.send(Event::SelectAction(ListType::ClientAction)),
-                                _ => { Ok(()) }
+                                _ => Ok(())
                             }.expect("could not send terminal event");
                         }
                         _ => { unimplemented!("popup not found in match block") }
@@ -195,6 +195,19 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                 },
                 Screen::Admin => {
                     match app_lock.active_popup {
+                        Some(Popup::FilterClients) => {
+                            match app_lock.admin.filter_screen_section {
+                                ScreenSection::Left => {
+                                    match key_event.code {
+                                        KeyCode::Esc => sender.send(Event::ExitPopup),
+                                        KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::ClientFilters)),
+                                        KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::ClientFilters)),
+                                        _ => Ok(())
+                                    }.expect("could not send terminal event");
+                                }
+                                _ => {}
+                            }
+                        }
                         None => {
                             match key_event.code {
                                 KeyCode::Esc => sender.send(Event::EnterScreen(Screen::Login)),
@@ -207,7 +220,7 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                         KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::AdminAction)),
                                         KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::AdminAction)),
                                         KeyCode::Enter => sender.send(Event::SelectAction(ListType::AdminAction)),
-                                        _ => { Ok(()) }
+                                        _ => Ok(())
                                     }.expect("could not send terminal event");
                                 }
                                 ScreenSection::Right => todo!(),
@@ -217,7 +230,7 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                         _ => todo!("popups on admin screen")
                     }
                 }
-                _ => { unimplemented!("screen not found in match block") }
+                _ => unimplemented!("screen not found in match block")
             }
         },
         CrosstermEvent::Resize(_, _) => {
