@@ -172,8 +172,6 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
         Event::Deposit | Event::Withdraw => {
             modify_balance(app, pool, event).await?;
             let mut app_lock = app.lock().unwrap();
-            app_lock.input.0.reset();
-            app_lock.active_popup = None;
             Ok(())
         },
         Event::Transfer => {
@@ -271,5 +269,7 @@ async fn modify_balance(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event:
         .execute(pool)
         .await?;
 
+    app_lock.input.0.reset();
+    app_lock.active_popup = None;
     Ok(())
 }
