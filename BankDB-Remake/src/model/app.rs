@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use ratatui::widgets::{ListState, List};
 use crate::model::client::Client;
 
+#[derive(Debug, Clone)]
 pub enum Screen {
     Login,
     Client,
@@ -46,6 +47,7 @@ pub enum TimeoutType {
     Login,
 }
 
+#[derive(Debug)]
 pub enum ListType {
     ClientAction,
     AdminAction,
@@ -58,6 +60,7 @@ pub enum ScreenSection {
     Right,
 }
 
+#[derive(Debug)]
 pub enum ScreenSectionType {
     AdminMain,
     AdminFilters,

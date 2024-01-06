@@ -1,8 +1,8 @@
 #![allow(non_snake_case)]
 
 mod model;
-mod event;
 mod update;
+mod event;
 mod tui;
 mod ui;
 

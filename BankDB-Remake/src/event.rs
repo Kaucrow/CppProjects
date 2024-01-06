@@ -33,7 +33,7 @@ pub enum InputBlacklist {
 }
 
 /// Terminal events
-//#[derive(Debug)]
+#[derive(Debug)]
 pub enum Event {
     Quit,
     ExitPopup,
