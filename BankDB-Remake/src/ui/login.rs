@@ -11,7 +11,7 @@ use crate::{
         App,
         Popup,
         InputMode,
-        TimeoutType, Filter
+        TimeoutType,
     },
     ui::common_fn::{
         centered_rect,

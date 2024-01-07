@@ -120,6 +120,11 @@ impl std::default::Default for ClientData {
     }
 }
 
+pub enum Button {
+    Up,
+    Down
+}
+
 pub struct AdminData {
     pub actions: Vec<&'static str>,
     pub action_list_state: ListState,
@@ -129,7 +134,8 @@ pub struct AdminData {
     pub filter_list_state: ListState,
     pub filter_screen_section: ScreenSection,
     pub active_filter: Option<Filter>,
-    pub applied_filters: HashMap<Filter, Option<String>>
+    pub applied_filters: HashMap<Filter, Option<String>>,
+    pub button_selection: Option<Button>,
 }
 
 impl std::default::Default for AdminData {
@@ -173,7 +179,8 @@ impl std::default::Default for AdminData {
                 (Filter::Balance, None),
                 (Filter::AccType, None),
                 (Filter::AccStatus, None),
-            ])
+            ]),
+            button_selection: None,
         }
     }
 }
@@ -248,16 +255,7 @@ impl App {
         list_state.select(Some(i));
 
         if let ListType::ClientFilters = list_type {
-            let filter = *self.admin.filter_sidescreens.get(&i)
-                .unwrap_or_else(|| panic!("sidescreen not found in filter sidescreens"));
-
-            self.admin.active_filter = Some(filter);
-            
-            if let Some(value) = self.admin.applied_filters.get(&filter).unwrap() {
-                self.input.0 = value.clone().into();
-            } else {
-                self.input.0.reset();
-            }
+            self.update_filter_data(i);
         }
     }
     
@@ -281,15 +279,46 @@ impl App {
         list_state.select(Some(i));
         
         if let ListType::ClientFilters = list_type {
-            let filter = *self.admin.filter_sidescreens.get(&i)
-                .unwrap_or_else(|| panic!("sidescreen not found in filter sidescreens"));
+            self.update_filter_data(i);
+        }
+    }
 
-            self.admin.active_filter = Some(filter);
-            
-            if let Some(value) = self.admin.applied_filters.get(&filter).unwrap() {
-                self.input.0 = value.clone().into();
-            } else {
-                self.input.0.reset();
+    fn update_filter_data(&mut self, list_selection: usize) {
+        let filter = *self.admin.filter_sidescreens.get(&list_selection)
+            .unwrap_or_else(|| panic!("sidescreen not found in filter sidescreens"));
+
+        self.admin.active_filter = Some(filter);
+        
+        if let Some(value) = self.admin.applied_filters.get(&filter).unwrap() {
+            match filter {
+                Filter::Username | Filter::Name | Filter::Ci |
+                Filter::Balance | Filter::AccNum
+                => self.input.0 = value.clone().into(),
+
+                Filter::AccStatus => {
+                    if value == "suspended" {
+                        self.admin.button_selection = Some(Button::Up)
+                    } else {
+                        self.admin.button_selection = Some(Button::Down)
+                    }
+                },
+
+                Filter::AccType => {
+                    if value == "current" {
+                        self.admin.button_selection = Some(Button::Up)
+                    } else {
+                        self.admin.button_selection = Some(Button::Down)
+                    }
+                }
+            }
+        } else {
+            match filter {
+                Filter::Username | Filter::Name | Filter::Ci |
+                Filter::Balance | Filter::AccNum
+                => self.input.0.reset(),
+
+                Filter::AccStatus | Filter::AccType
+                => self.admin.button_selection = None
             }
         }
     }

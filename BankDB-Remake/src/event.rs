@@ -52,6 +52,7 @@ pub enum Event {
     EditFilter,
     ExitEditFilter,
     RegisterFilter,
+    SwitchButton,
     Resize,
     TimeoutStep(TimeoutType),
 }
@@ -241,6 +242,14 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                         }
                                         Some(Filter::Balance) => {
                                             sender.send(Event::KeyInput(key_event, InputBlacklist::Money))
+                                        }
+                                        Some(Filter::AccStatus) | Some(Filter::AccType) => {
+                                            match key_event.code {
+                                                KeyCode::Tab => {
+                                                    sender.send(Event::SwitchButton)
+                                                }
+                                                _ => Ok(())
+                                            }
                                         }
                                         _ => todo!("filter sidescreen events")
                                     }.expect("could not send terminal event");

@@ -39,6 +39,11 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             app_lock.input.0.reset();
             app_lock.input.1.reset();
             app_lock.hold_popup = false;
+            for value in app_lock.admin.applied_filters.values_mut() {
+                *value = None;
+            }
+            app_lock.admin.filter_list_state.select(None);
+            app_lock.admin.active_filter = None;
             match app_lock.curr_screen {
                 Screen::Client => app_lock.help_text = "Choose an action to perform. Press Esc to go back.",
                 _ => {}
@@ -140,7 +145,7 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
                         }
                     }
                     InputBlacklist::Alphabetic => {
-                        if !char.is_alphabetic() {
+                        if !char.is_alphabetic() && char != ' ' {
                             return Ok(())
                         }
                     }

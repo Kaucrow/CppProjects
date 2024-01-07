@@ -11,6 +11,8 @@ use crate::{
         App,
         Popup,
         Filter,
+        ScreenSection,
+        Button,
     },
     ui::common_fn::{
         centered_rect,
@@ -91,10 +93,22 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                     Constraint::Percentage(65),
                 ])
                 .split(popup_rect);
+                    
+            let (left_fg_color, right_fg_color) = if let ScreenSection::Left = app_lock.admin.filter_screen_section {
+                (Color::White, Color::DarkGray)
+            } else {
+                (Color::DarkGray, Color::White)
+            };
 
-            let filters_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded);
+            let filters_block = Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
+                .style(Style::default().fg(left_fg_color));
             
-            let input_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded);
+            let input_block = Block::default()
+                .borders(Borders::ALL)
+                .border_type(BorderType::Rounded)
+                .style(Style::default().fg(right_fg_color));
             
             let filters = List::new(app_lock.admin.filters.clone())
                 .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
@@ -107,19 +121,29 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                 Some(Filter::Username) | Some(Filter::Name) |
                 Some(Filter::Ci) | Some(Filter::AccNum) |
                 Some(Filter::Balance) => {
-                    let input_rect = centered_rect(
-                        percent_x(f, 2.0),
-                        percent_y(f, 0.5),
-                        popup_chunks[1]);
+                    let input_chunks = Layout::default()
+                        .direction(Direction::Vertical)
+                        .constraints([
+                            Constraint::Percentage(20),
+                            Constraint::Length(3),
+                            Constraint::Percentage(100),
+                        ])
+                        .split(popup_chunks[1].inner(&Margin::new(6, 2)));
                     
-                    let input_block = Block::default().borders(Borders::BOTTOM).border_type(BorderType::Thick).title("Input");
+                    let input_block = Block::default().borders(Borders::ALL).title("Input");
 
                     let input = Paragraph::new(Line::from(
-                        Span::raw(app_lock.input.0.value())
+                        Span::styled(app_lock.input.0.value(), Style::default().fg(Color::Green).add_modifier(Modifier::CROSSED_OUT))
                     ))
                     .block(input_block);
 
-                    f.render_widget(input, input_rect);
+                    f.render_widget(input, input_chunks[1]);
+
+                    f.set_cursor(input_chunks[1].x
+                                    + app_lock.input.0.visual_cursor() as u16
+                                    + 1,
+                                 input_chunks[1].y + 1,
+                                );
                 }
                 Some(Filter::AccType) | Some(Filter::AccStatus) => {
                     let options_chunks = Layout::default()
@@ -132,7 +156,25 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                         .split(popup_chunks[1].inner(&Margin::new(6, 1)));
 
                     let option_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded);
-                    
+
+                    let (option1_fg_color, option2_fg_color) = match app_lock.admin.filter_screen_section {
+                        ScreenSection::Left => {
+                            match app_lock.admin.button_selection {
+                                Some(Button::Up) => (Color::Green, Color::DarkGray),
+                                Some(Button::Down) => (Color::DarkGray, Color::Green),
+                                None => (Color::DarkGray, Color::DarkGray)
+                            }
+                        }
+                        ScreenSection::Right => {
+                            match app_lock.admin.button_selection {
+                                Some(Button::Up) => (Color::Green, Color::White),
+                                Some(Button::Down) => (Color::White, Color::Green),
+                                None => (Color::White, Color::White)
+                            }
+                        }
+                        _ => panic!()
+                    };
+
                     let (option1_text, option2_text) = match app_lock.admin.active_filter {
                         Some(Filter::AccType) => ("Current", "Debit"),
                         Some(Filter::AccStatus) => ("Suspended", "Not suspended"),
@@ -142,12 +184,14 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                     let option1 = Paragraph::new(Line::from(
                         Span::raw(format!("{}", option1_text))
                     ))
+                    .style(Style::default().fg(option1_fg_color))
                     .block(option_block.clone())
                     .alignment(Alignment::Center);
                     
                     let option2 = Paragraph::new(Line::from(
                         Span::raw(format!("{}", option2_text))
                     ))
+                    .style(Style::default().fg(option2_fg_color))
                     .block(option_block)
                     .alignment(Alignment::Center);
 
