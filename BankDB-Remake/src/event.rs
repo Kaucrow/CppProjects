@@ -18,6 +18,7 @@ use crate::model::app::{
     Screen,
     TimeoutType,
     ListType,
+    TableType,
     InputMode,
     ScreenSection,
     ScreenSectionType,
@@ -45,6 +46,8 @@ pub enum Event {
     NextListItem(ListType),
     PreviousListItem(ListType),
     SelectAction(ListType),
+    NextTableItem(TableType),
+    PreviousTableItem(TableType),
     Deposit,
     Withdraw,
     Transfer,
@@ -52,6 +55,7 @@ pub enum Event {
     EditFilter,
     ExitEditFilter,
     RegisterFilter,
+    ApplyFilters,
     SwitchButton,
     Resize,
     TimeoutStep(TimeoutType),
@@ -212,6 +216,10 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                             sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminFilters)).expect("could not send terminal event");
                                             sender.send(Event::EditFilter)
                                         }
+                                        KeyCode::Char('e') => {
+                                            sender.send(Event::ApplyFilters).expect("could not send terminal event");
+                                            sender.send(Event::ExitPopup)
+                                        }
                                         KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::ClientFilters)),
                                         KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::ClientFilters)),
                                         _ => Ok(())
@@ -272,7 +280,13 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                         _ => Ok(())
                                     }.expect("could not send terminal event");
                                 }
-                                ScreenSection::Right => todo!(),
+                                ScreenSection::Right => {
+                                    match key_event.code {
+                                        KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousTableItem(TableType::Clients)),
+                                        KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextTableItem(TableType::Clients)),
+                                        _ => Ok(())
+                                    }.expect("could not send terminal event");
+                                },
                                 _ => {}
                             }
                         }

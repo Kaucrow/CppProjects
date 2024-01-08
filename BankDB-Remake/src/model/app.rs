@@ -1,7 +1,7 @@
 use tui_input::Input;
 use std::time::{Instant, Duration};
 use std::collections::HashMap;
-use ratatui::widgets::{ListState, List};
+use ratatui::widgets::{ListState, TableState, Table};
 use crate::model::client::Client;
 
 #[derive(Debug, Clone)]
@@ -52,6 +52,11 @@ pub enum ListType {
     ClientAction,
     AdminAction,
     ClientFilters,
+}
+
+#[derive(Debug)]
+pub enum TableType {
+    Clients 
 }
 
 pub enum ScreenSection {
@@ -128,6 +133,8 @@ pub enum Button {
 pub struct AdminData {
     pub actions: Vec<&'static str>,
     pub action_list_state: ListState,
+    pub client_table_state: TableState,
+    pub stored_clients: Vec<Client>,
     pub popups: HashMap<usize, Popup>,
     pub filters: Vec<&'static str>,
     pub filter_sidescreens: HashMap<usize, Filter>,
@@ -146,6 +153,8 @@ impl std::default::Default for AdminData {
                 "Add a client"
             ],
             action_list_state: ListState::default(),
+            client_table_state: TableState::default(),
+            stored_clients: Vec::new(),
             popups: HashMap::from([
                 (0, Popup::FilterClients),
                 (1, Popup::AddClient)
@@ -206,7 +215,7 @@ impl std::default::Default for App {
 }
 
 impl App {
-    pub fn enter_screen(&mut self, screen: Screen) {
+    pub fn enter_screen(&mut self, screen: &Screen) {
         self.should_clear_screen = true;
         self.active_popup = None;
         self.input.0.reset();
@@ -235,11 +244,50 @@ impl App {
         }
     }
 
+    pub fn next_table_item(&mut self, table_type: TableType) {
+        let (table_state, items) = match table_type {
+            TableType::Clients => (&mut self.admin.client_table_state, &self.admin.stored_clients),
+            _ => panic!()
+        };
+
+        let i = match table_state.selected() {
+            Some(i) => {
+                if i >= items.len() - 1 {
+                    i
+                } else {
+                    i + 1
+                }
+            }
+            None => 0,
+        };
+        table_state.select(Some(i));
+    }
+
+    pub fn previous_table_item(&mut self, table_type: TableType) {
+        let (table_state, items) = match table_type {
+            TableType::Clients => (&mut self.admin.client_table_state, &self.admin.stored_clients),
+            _ => panic!()
+        };
+
+        let i = match table_state.selected() {
+            Some(i) => {
+                if i == 0 {
+                    i
+                } else {
+                    i - 1
+                }
+            }
+            None => 0,
+        };
+        table_state.select(Some(i));
+    }
+
     pub fn next_list_item(&mut self, list_type: ListType) {
         let (list_state, items) = match list_type {
             ListType::ClientAction => (&mut self.client.action_list_state, &self.client.actions),
             ListType::AdminAction => (&mut self.admin.action_list_state, &self.admin.actions),
-            ListType::ClientFilters => (&mut self.admin.filter_list_state, &self.admin.filters)
+            ListType::ClientFilters => (&mut self.admin.filter_list_state, &self.admin.filters),
+            _ => panic!()
         };
 
         let i = match list_state.selected() {
@@ -263,7 +311,8 @@ impl App {
         let (list_state, items) = match list_type {
             ListType::ClientAction => (&mut self.client.action_list_state, &self.client.actions),
             ListType::AdminAction => (&mut self.admin.action_list_state, &self.admin.actions),
-            ListType::ClientFilters => (&mut self.admin.filter_list_state, &self.admin.filters)
+            ListType::ClientFilters => (&mut self.admin.filter_list_state, &self.admin.filters),
+            _ => panic!()
         };
 
         let i = match list_state.selected() {

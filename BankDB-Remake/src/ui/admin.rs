@@ -3,7 +3,7 @@ use ratatui::{
     prelude::{Alignment, Frame},
     style::{Color, Style, Modifier},
     text::{Line, Span, Text},
-    widgets::{Block, List, BorderType, Borders, Paragraph, Clear}
+    widgets::{Block, List, Row, Table, BorderType, Borders, Paragraph, Clear}
 };
 use std::sync::{Arc, Mutex};
 use crate::{
@@ -32,7 +32,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
             Constraint::Min(3)
         ])
         .split(centered_rect(
-            percent_x(f, 2.0),
+            percent_x(f, 2.3),
             percent_y(f, 1.5),
             f.size()
         ));
@@ -69,12 +69,54 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
 
     f.render_widget(Block::default().borders(Borders::ALL), main_chunks[0]);
     f.render_widget(admin_title, left_chunks[0]);
-
-    f.render_widget(Block::default().borders(Borders::ALL), main_chunks[1]);
     
-    let actions = List::new(app_lock.admin.actions.clone()).highlight_style(Style::default().add_modifier(Modifier::REVERSED));
+    let actions = List::new(app_lock.admin.actions.clone())
+        .highlight_style(Style::default().add_modifier(Modifier::REVERSED));
 
     f.render_stateful_widget(actions, left_chunks[1], &mut app_lock.admin.action_list_state);
+    
+    let client_table_chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(5),
+            Constraint::Percentage(90),
+            Constraint::Percentage(5),
+        ])
+        .split(main_chunks[1].inner(&Margin::new(0, 1)));
+
+    let client_table_block = Block::default().borders(Borders::ALL);
+    
+    let header =
+        Row::new(vec!["Username", "Name", "C.I.", "Acc. num.",])
+        .style(Style::default().fg(Color::Cyan));
+
+    let widths = [
+        Constraint::Length(15),
+        Constraint::Length(15),
+        Constraint::Length(9),
+        Constraint::Length(9),
+    ];
+    
+    let rows: Vec<Row> =
+        app_lock.admin.stored_clients
+        .iter()
+        .map(|client| {
+            Row::new(vec![
+                client.username.clone(),
+                client.name.clone(),
+                client.ci.to_string(),
+                client.account_number.to_string()])
+        })
+        .collect();
+
+    let client_table = Table::new(rows, widths)
+        .column_spacing(3)
+        .header(header.bottom_margin(1))
+        .highlight_style(Style::default().fg(Color::Green).add_modifier(Modifier::REVERSED));
+        //.block(Block::default().borders(Borders::ALL));
+    
+    f.render_widget(client_table_block, main_chunks[1]);
+    f.render_stateful_widget(client_table, client_table_chunks[1], &mut app_lock.admin.client_table_state);
     
     match app_lock.active_popup {
         Some(Popup::FilterClients) => {

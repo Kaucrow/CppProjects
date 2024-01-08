@@ -1,17 +1,20 @@
 use std::sync::{Arc, Mutex};
-use sqlx::{Pool, Postgres};
+use sqlx::{Pool, Postgres, Row, FromRow};
 use anyhow::Result;
 use crate::{
     event::Event,
-    model::app::{
-        App,
-        InputMode,
-        Filter,
-        Button,
+    model::{
+        app::{
+            App,
+            InputMode,
+            Filter,
+            Button,
+        },
+        client::Client
     },
 };
 
-pub async fn update(app: &mut Arc<Mutex<App>>, _: &Pool<Postgres>, event: Event) -> Result<()> {
+pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Event) -> Result<()> {
     match event {
         Event::EditFilter => {
             let mut app_lock = app.lock().unwrap();
@@ -64,6 +67,46 @@ pub async fn update(app: &mut Arc<Mutex<App>>, _: &Pool<Postgres>, event: Event)
                 }
                 _ => {}
             }
+
+            Ok(())
+        }
+        Event::ApplyFilters => {
+            let mut app_lock = app.lock().unwrap();
+
+            let mut query = String::from("SELECT * FROM clients WHERE ");
+            for (filter, value) in app_lock.admin.applied_filters.iter() {
+                if value.is_some() {
+                    let value = value.as_ref().unwrap();
+                    match filter {
+                        Filter::Username => query.push_str(format!("username = '{value}' AND ").as_str()),
+                        Filter::Name => query.push_str(format!("name = '{value}' AND ").as_str()),
+                        Filter::Ci => query.push_str(format!("ci = '{value}' AND ").as_str()),
+                        Filter::AccNum => query.push_str(format!("account_number = '{value}' AND ").as_str()),
+                        Filter::Balance => query.push_str(format!("balance = '{value}' AND ").as_str()),
+                        Filter::AccType => query.push_str(format!("account_type = '{value}' AND ").as_str()),
+                        Filter::AccStatus => match value.as_str() {
+                            "suspended" => query.push_str("suspended = true AND "),
+                            "not suspended" => query.push_str("suspended = false AND "),
+                            _ => panic!("invalid applied filter value")
+                        }
+                        _ => {}
+                    }
+                }
+            }
+
+            query.pop();
+            if let Some(last_space_idx) = query.rfind(' ') {
+                query.truncate(last_space_idx);
+            }
+
+            app_lock.admin.stored_clients.clear();
+            app_lock.admin.stored_clients =
+                sqlx::query(&query)
+                .fetch_all(pool)
+                .await?
+                .iter()
+                .map(|row| Client::from_row(row))
+                .collect::<Result<_, sqlx::Error>>()?;
 
             Ok(())
         }

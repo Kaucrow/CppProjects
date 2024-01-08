@@ -18,13 +18,14 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
         Event::TryLogin | Event::SwitchInput | Event::SwitchScreenSection(_) | Event::KeyInput(..)
         => common::update(app, pool, event).await,
 
-        Event::NextListItem(_) | Event::PreviousListItem(_) | Event::SelectAction(_)
+        Event::NextListItem(_) | Event::PreviousListItem(_) | Event::SelectAction(_) |
+        Event::NextTableItem(_) | Event::PreviousTableItem(_)
         => list::update(app, pool, event).await,
 
         Event::Deposit | Event::Withdraw | Event::Transfer | Event::ChangePasswd
         => client::update(app, pool, event).await,
 
-        Event::EditFilter | Event::RegisterFilter | Event::SwitchButton
+        Event::EditFilter | Event::RegisterFilter | Event::ApplyFilters | Event::SwitchButton
         => admin::update(app, pool, event).await,
 
         _ => { Ok(()) }

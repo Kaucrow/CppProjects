@@ -22,6 +22,14 @@ pub async fn update(app: &mut Arc<Mutex<App>>, _: &Pool<Postgres>, event: Event)
             app.lock().unwrap().previous_list_item(list_type);
             Ok(())
         },
+        Event::NextTableItem(table_type) => {
+            app.lock().unwrap().next_table_item(table_type);
+            Ok(())
+        },
+        Event::PreviousTableItem(table_type) => {
+            app.lock().unwrap().previous_table_item(table_type);
+            Ok(())
+        },
         Event::SelectAction(list_type) => {
             let mut app_lock = app.lock().unwrap();
             let (list_state, popups) = match list_type {

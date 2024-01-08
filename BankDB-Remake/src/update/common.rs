@@ -51,7 +51,20 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             Ok(())
         },
         Event::EnterScreen(screen) => {
-            app.lock().unwrap().enter_screen(screen);
+            let mut app_lock = app.lock().unwrap();
+
+            app_lock.enter_screen(&screen);
+
+            if let Screen::Admin = screen {
+                app_lock.admin.stored_clients =
+                    sqlx::query("SELECT * FROM clients")
+                    .fetch_all(pool)
+                    .await?
+                    .iter()
+                    .map(|row| { Client::from_row(row) } )
+                    .collect::<Result<_, sqlx::Error>>()?
+            }
+
             Ok(())
         },
         Event::TryLogin => {
