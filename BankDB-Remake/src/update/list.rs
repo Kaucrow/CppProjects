@@ -42,7 +42,10 @@ pub async fn update(app: &mut Arc<Mutex<App>>, _: &Pool<Postgres>, event: Event)
                 app_lock.active_popup = Some(*popups.get(&selected).unwrap_or_else(|| panic!("popup not found in popups HashMap")));
                 match app_lock.active_popup.unwrap() {
                     Popup::Deposit | Popup::Withdraw | Popup::Transfer | Popup::ChangePsswd => app_lock.input_mode = InputMode::Editing(0),
-                    Popup::FilterClients => app_lock.admin.filter_screen_section = ScreenSection::Left,
+                    Popup::FilterClients => {
+                        app_lock.admin.filter_screen_section = ScreenSection::Left;
+                        app_lock.help_text = "Choose a filter to edit. `a`: Apply the selected filters. `Esc`: Go back.";
+                    }
                     _ => {}
                 }
             }

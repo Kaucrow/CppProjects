@@ -111,15 +111,25 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
         Event::SwitchScreenSection(screen_section_type) => {
             let mut app_lock = app.lock().unwrap();
 
-            let curr_screen_section = match screen_section_type {
-                ScreenSectionType::AdminMain => &mut app_lock.curr_screen_section,
-                ScreenSectionType::AdminFilters => &mut app_lock.admin.filter_screen_section,
+            let (curr_screen_section, help_text_left, help_text_right) = match screen_section_type {
+                ScreenSectionType::AdminMain => {
+                    (&mut app_lock.curr_screen_section,
+                    "Choose an action to perform. `Alt`: Switch windows. `Esc`: Go back.",
+                    "Choose a client to edit its data. `Alt`: Switch windows. `Esc`: Go back.")
+                }
+                ScreenSectionType::AdminFilters => {
+                    (&mut app_lock.admin.filter_screen_section,
+                    "Choose a filter to edit. `a`: Apply the selected filters. `Esc`: Go back.",
+                    "Input the value. `Enter`: Save changes. `Esc`: Quit editing and don't save changes.")
+                }
             };
 
             if let ScreenSection::Left = curr_screen_section {
                 *curr_screen_section = ScreenSection::Right;
+                app_lock.help_text = help_text_right; 
             } else {
                 *curr_screen_section = ScreenSection::Left;
+                app_lock.help_text = help_text_left; 
             }
             Ok(())
         },

@@ -238,7 +238,7 @@ impl App {
                 self.curr_screen = Screen::Admin;
                 self.curr_screen_section = ScreenSection::Left;
                 self.input_mode = InputMode::Normal;
-                self.help_text = "Choose a client or an action. Press Alt to switch windows. Press Esc to go back."
+                self.help_text = "Choose an action. `Alt`: Switch windows. `Esc`: Go back."
             }
             _ => { unimplemented!() }
         }

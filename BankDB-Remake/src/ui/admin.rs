@@ -61,13 +61,20 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
 
     f.render_widget(help, chunks[1]);
 
+    let (left_fg_color, right_fg_color) =
+        if let ScreenSection::Left = app_lock.curr_screen_section {
+            (Color::White, Color::DarkGray)
+        } else {
+            (Color::DarkGray, Color::White)
+        };
+
     let admin_title = Paragraph::new(Line::from(vec![
         Span::raw(" Login: "),
         Span::styled("Admin", Style::default().fg(Color::Yellow))
     ]))
     .block(Block::default().borders(Borders::BOTTOM));
 
-    f.render_widget(Block::default().borders(Borders::ALL), main_chunks[0]);
+    f.render_widget(Block::default().borders(Borders::ALL).style(Style::default().fg(left_fg_color)), main_chunks[0]);
     f.render_widget(admin_title, left_chunks[0]);
     
     let actions = List::new(app_lock.admin.actions.clone())
@@ -84,7 +91,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
         ])
         .split(main_chunks[1].inner(&Margin::new(0, 1)));
 
-    let client_table_block = Block::default().borders(Borders::ALL);
+    let client_table_block = Block::default().borders(Borders::ALL).style(Style::default().fg(right_fg_color));
     
     let header =
         Row::new(vec!["Username", "Name", "C.I.", "Acc. num.",])
