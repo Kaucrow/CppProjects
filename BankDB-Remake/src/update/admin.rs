@@ -1,15 +1,11 @@
 use std::sync::{Arc, Mutex};
-use sqlx::{Pool, Postgres, Row, FromRow};
+use sqlx::{Pool, Postgres, FromRow};
 use anyhow::Result;
 use crate::{
     event::Event,
     model::{
-        app::{
-            App,
-            InputMode,
-            Filter,
-            Button,
-        },
+        common::{InputMode, Filter, Button},
+        app::App,
         client::Client
     },
 };

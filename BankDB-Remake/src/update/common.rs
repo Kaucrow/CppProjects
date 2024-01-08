@@ -10,15 +10,8 @@ use crate::{
         InputBlacklist,
     },
     model::{
-        app::{
-        App,
-        InputMode,
-        Screen,
-        ScreenSection,
-        Popup,
-        TimeoutType,
-        ScreenSectionType,
-        },
+        common::{InputMode, Popup, Screen, ScreenSection, TimeoutType, ScreenSectionType},
+        app::App,
         client::Client,
     }
 };

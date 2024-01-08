@@ -1,5 +1,5 @@
 use ratatui::{
-    layout::{Layout, Direction, Rect, Constraint, Margin},
+    layout::{Layout, Direction, Constraint, Margin},
     prelude::{Alignment, Frame},
     style::{Color, Style, Modifier},
     text::{Line, Span, Text},
@@ -7,12 +7,9 @@ use ratatui::{
 };
 use std::sync::{Arc, Mutex};
 use crate::{
-    model::app::{
-        App,
-        Popup,
-        Filter,
-        ScreenSection,
-        Button,
+    model::{
+        common::{Popup, Filter, ScreenSection, Button},
+        app::App
     },
     ui::common_fn::{
         centered_rect,

@@ -3,12 +3,9 @@ use sqlx::{Pool, Postgres};
 use anyhow::Result;
 use crate::{
     event::Event,
-    model::app::{
-        App,
-        ScreenSection,
-        Popup,
-        InputMode,
-        ListType,
+    model::{
+        common::{ScreenSection, Popup, InputMode, ListType},
+        app::App,
     }
 };
 

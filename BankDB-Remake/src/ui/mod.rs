@@ -5,7 +5,7 @@ mod common_fn;
 
 use std::sync::{Arc, Mutex};
 use ratatui::prelude::Frame;
-use crate::model::app::{App, Screen};
+use crate::model::{common::Screen, app::App};
 
 pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
     let curr_screen = app.lock().unwrap().curr_screen.clone();

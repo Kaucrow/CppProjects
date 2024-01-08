@@ -12,17 +12,12 @@ use std::{
     time::{Duration, Instant}
 };
 use anyhow::Result;
-use crate::model::app::{
-    App,
-    Popup,
-    Screen,
-    TimeoutType,
-    ListType,
-    TableType,
-    InputMode,
-    ScreenSection,
-    ScreenSectionType,
-    Filter,
+use crate::model::{
+    common::{
+        Popup, Screen, TimeoutType, ListType, TableType, InputMode,
+        ScreenSection, ScreenSectionType, Filter
+    },
+    app::App,
 };
 
 #[derive(Debug)]

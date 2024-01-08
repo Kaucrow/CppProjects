@@ -7,10 +7,9 @@ use ratatui::{
 };
 use std::sync::{Arc, Mutex};
 use crate::{
-    model::app::{
-        App,
-        Popup,
-        InputMode,
+    model::{
+        common::{Popup, InputMode},
+        app::App,
     },
     ui::common_fn::{
         centered_rect,

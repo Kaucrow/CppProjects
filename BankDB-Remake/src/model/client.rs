@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use ratatui::widgets::ListState;
 use anyhow::Result;
 use sqlx::postgres::PgTypeInfo;
 use rust_decimal::Decimal;
@@ -11,6 +13,7 @@ use sqlx::{
     Decode,
     Type,
 };
+use crate::model::common::Popup;
 
 #[derive(Debug)]
 pub enum AccountType {
@@ -141,5 +144,35 @@ impl<'r> FromRow<'r, PgRow> for Client {
             last_transaction: None,
             suspended: row.try_get("suspended")?,
         })
+    }
+}
+
+pub struct ClientData {
+    pub active: Option<Client>,
+    pub actions: Vec<&'static str>,
+    pub action_list_state: ListState,
+    pub popups: HashMap<usize, Popup>,
+}
+
+impl std::default::Default for ClientData {
+    fn default() -> Self {
+        ClientData {
+            active: None,
+            actions: vec![
+                "View info",
+                "Make a deposit",
+                "Make a withdrawal",
+                "Make a transfer",
+                "Change password"
+            ],
+            action_list_state: ListState::default(),
+            popups: HashMap::from([
+                (0, Popup::ViewInfo),
+                (1, Popup::Deposit),
+                (2, Popup::Withdraw),
+                (3, Popup::Transfer),
+                (4, Popup::ChangePsswd)
+            ])
+        }
     }
 }

@@ -8,7 +8,7 @@ mod ui;
 
 use anyhow::Result; 
 use ratatui::{ backend::CrosstermBackend, Terminal };
-use model::app::{App, Screen};
+use model::{common::Screen, app::App};
 use update::update;
 use event::EventHandler;
 use tui::Tui;
