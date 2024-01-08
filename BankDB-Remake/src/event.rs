@@ -211,7 +211,7 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                             sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminFilters)).expect("could not send terminal event");
                                             sender.send(Event::EditFilter)
                                         }
-                                        KeyCode::Char('e') => {
+                                        KeyCode::Char('a') => {
                                             sender.send(Event::ApplyFilters).expect("could not send terminal event");
                                             sender.send(Event::ExitPopup)
                                         }

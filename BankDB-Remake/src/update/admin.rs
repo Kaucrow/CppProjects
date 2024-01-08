@@ -95,6 +95,8 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
                 query.truncate(last_space_idx);
             }
 
+            query.push_str(" FETCH FIRST 10 ROW ONLY");
+
             app_lock.admin.stored_clients.clear();
             app_lock.admin.stored_clients =
                 sqlx::query(&query)

@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use anyhow::Result;
+use sqlx::{Row, FromRow, PgPool};
 use ratatui::widgets::{ListState, TableState};
 use crate::model::{
     common::{Popup, Filter, Button, ScreenSection},
@@ -10,6 +12,8 @@ pub struct AdminData {
     pub action_list_state: ListState,
     pub client_table_state: TableState,
     pub stored_clients: Vec<Client>,
+    pub viewing_clients: i32,
+    pub query_clients: String,
     pub popups: HashMap<usize, Popup>,
     pub filters: Vec<&'static str>,
     pub filter_sidescreens: HashMap<usize, Filter>,
@@ -30,6 +34,8 @@ impl std::default::Default for AdminData {
             action_list_state: ListState::default(),
             client_table_state: TableState::default(),
             stored_clients: Vec::new(),
+            viewing_clients: 0,
+            query_clients: String::from("SELECT * FROM clients"),
             popups: HashMap::from([
                 (0, Popup::FilterClients),
                 (1, Popup::AddClient)
@@ -66,5 +72,56 @@ impl std::default::Default for AdminData {
             ]),
             button_selection: None,
         }
+    }
+}
+
+pub enum ModifiedTable {
+    Yes,
+    No
+}
+
+pub enum GetClientsType {
+    Next,
+    Previous
+}
+
+impl AdminData {
+    pub async fn get_clients(&mut self, pool: &PgPool, get_type: GetClientsType) -> Result<ModifiedTable> {
+        match get_type {
+            GetClientsType::Next => self.viewing_clients += 10,
+            GetClientsType::Previous => {
+                if self.viewing_clients == 0 { return Ok(ModifiedTable::No); }
+                self.viewing_clients -= 10;
+            }
+        }
+
+        self.query_clients.push_str(format!(" LIMIT 10 OFFSET {}", self.viewing_clients).as_str());
+        let result = self.get_clients_raw(pool).await?;
+        self.query_clients.truncate(self.query_clients.find(" LIMIT").unwrap());
+
+        if let (GetClientsType::Next, ModifiedTable::No) = (get_type, &result) {
+            self.viewing_clients += 10
+        }
+
+        Ok(result)
+    }
+
+    async fn get_clients_raw(&mut self, pool: &PgPool) -> Result<ModifiedTable> {
+        let res: Vec<Client> = {
+            sqlx::query(self.query_clients.as_str())
+            .fetch_all(pool)
+            .await?
+            .iter()
+            .map(|row| { Client::from_row(row) } )
+            .collect::<Result<_, sqlx::Error>>()?
+        };
+
+        if !res.is_empty() {
+            self.stored_clients.clear();
+            self.stored_clients = res;
+            return Ok(ModifiedTable::Yes);
+        }
+
+        Ok(ModifiedTable::No)
     }
 }

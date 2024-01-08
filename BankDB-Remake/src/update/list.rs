@@ -9,7 +9,7 @@ use crate::{
     }
 };
 
-pub async fn update(app: &mut Arc<Mutex<App>>, _: &Pool<Postgres>, event: Event) -> Result<()> {
+pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Event) -> Result<()> {
     match event {
         Event::NextListItem(list_type) => {
             app.lock().unwrap().next_list_item(list_type);
@@ -20,11 +20,11 @@ pub async fn update(app: &mut Arc<Mutex<App>>, _: &Pool<Postgres>, event: Event)
             Ok(())
         },
         Event::NextTableItem(table_type) => {
-            app.lock().unwrap().next_table_item(table_type);
+            app.lock().unwrap().next_table_item(table_type, pool).await?;
             Ok(())
         },
         Event::PreviousTableItem(table_type) => {
-            app.lock().unwrap().previous_table_item(table_type);
+            app.lock().unwrap().previous_table_item(table_type, pool).await?;
             Ok(())
         },
         Event::SelectAction(list_type) => {

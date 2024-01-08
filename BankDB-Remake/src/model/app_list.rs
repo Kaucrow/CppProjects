@@ -1,10 +1,22 @@
+use anyhow::Result;
+use sqlx::PgPool;
 use crate::model::{
     common::{Filter, Button, ListType, TableType},
     app::App,
 };
 
+use super::admin::{ModifiedTable, GetClientsType};
+
 impl App {
-    pub fn next_table_item(&mut self, table_type: TableType) {
+    pub async fn next_table_item(&mut self, table_type: TableType, pool: &PgPool) -> Result<()> {
+        let mut modified_table = ModifiedTable::No;
+
+        if let Some(selection) = self.admin.client_table_state.selected() {
+            if selection >= self.admin.stored_clients.len() - 1 {
+                modified_table = self.admin.get_clients(pool, GetClientsType::Next).await?;
+            }
+        }
+
         let (table_state, items) = match table_type {
             TableType::Clients => (&mut self.admin.client_table_state, &self.admin.stored_clients),
             _ => panic!()
@@ -13,7 +25,8 @@ impl App {
         let i = match table_state.selected() {
             Some(i) => {
                 if i >= items.len() - 1 {
-                    i
+                    if let ModifiedTable::No = modified_table { i }
+                    else { 0 }
                 } else {
                     i + 1
                 }
@@ -21,9 +34,19 @@ impl App {
             None => 0,
         };
         table_state.select(Some(i));
+
+        Ok(())
     }
 
-    pub fn previous_table_item(&mut self, table_type: TableType) {
+    pub async fn previous_table_item(&mut self, table_type: TableType, pool: &PgPool) -> Result<()> {
+        let mut modified_table = ModifiedTable::No;
+
+        if let Some(selection) = self.admin.client_table_state.selected() {
+            if selection == 0 {
+                modified_table = self.admin.get_clients(pool, GetClientsType::Previous).await?;
+            }
+        }
+
         let (table_state, items) = match table_type {
             TableType::Clients => (&mut self.admin.client_table_state, &self.admin.stored_clients),
             _ => panic!()
@@ -32,7 +55,8 @@ impl App {
         let i = match table_state.selected() {
             Some(i) => {
                 if i == 0 {
-                    i
+                    if let ModifiedTable::No = modified_table { 0 }
+                    else { items.len() - 1}
                 } else {
                     i - 1
                 }
@@ -40,6 +64,8 @@ impl App {
             None => 0,
         };
         table_state.select(Some(i));
+
+        Ok(())
     }
 
     pub fn next_list_item(&mut self, list_type: ListType) {

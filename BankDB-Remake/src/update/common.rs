@@ -50,7 +50,7 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
 
             if let Screen::Admin = screen {
                 app_lock.admin.stored_clients =
-                    sqlx::query("SELECT * FROM clients")
+                    sqlx::query("SELECT * FROM clients FETCH FIRST 10 ROW ONLY")
                     .fetch_all(pool)
                     .await?
                     .iter()
