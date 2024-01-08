@@ -179,7 +179,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                     let input_block = Block::default().borders(Borders::ALL).title("Input");
 
                     let input = Paragraph::new(Line::from(
-                        Span::styled(app_lock.input.0.value(), Style::default().fg(Color::Green).add_modifier(Modifier::CROSSED_OUT))
+                        Span::styled(app_lock.input.0.value(), Style::default().fg(Color::Green))
                     ))
                     .block(input_block);
 

@@ -106,7 +106,7 @@ impl AdminData {
         Ok(result)
     }
 
-    async fn get_clients_raw(&mut self, pool: &PgPool) -> Result<ModifiedTable> {
+    pub async fn get_clients_raw(&mut self, pool: &PgPool) -> Result<ModifiedTable> {
         let res: Vec<Client> = {
             sqlx::query(self.query_clients.as_str())
             .fetch_all(pool)

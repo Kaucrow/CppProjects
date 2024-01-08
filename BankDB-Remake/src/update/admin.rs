@@ -6,7 +6,7 @@ use crate::{
     model::{
         common::{InputMode, Filter, Button},
         app::App,
-        client::Client
+        admin::GetClientsType
     },
 };
 
@@ -95,16 +95,9 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
                 query.truncate(last_space_idx);
             }
 
-            query.push_str(" FETCH FIRST 10 ROW ONLY");
-
-            app_lock.admin.stored_clients.clear();
-            app_lock.admin.stored_clients =
-                sqlx::query(&query)
-                .fetch_all(pool)
-                .await?
-                .iter()
-                .map(|row| Client::from_row(row))
-                .collect::<Result<_, sqlx::Error>>()?;
+            app_lock.admin.query_clients = query;
+            app_lock.admin.viewing_clients = 0;
+            app_lock.admin.get_clients_raw(pool).await?;
 
             Ok(())
         }
