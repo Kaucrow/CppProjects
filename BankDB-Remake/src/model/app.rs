@@ -1,10 +1,13 @@
 use tui_input::Input;
 use std::time::{Instant, Duration};
 use std::collections::HashMap;
-use crate::model::{
-    common::{InputFields, InputMode, TimeoutType, Timer, Screen, ScreenSection, Popup},
-    admin::AdminData,
-    client::ClientData
+use crate::{
+    HELP_TEXT,
+    model::{
+        common::{InputFields, InputMode, TimeoutType, Timer, Screen, ScreenSection, Popup},
+        admin::AdminData,
+        client::ClientData,
+    }
 };
 
 pub struct App {
@@ -15,8 +18,8 @@ pub struct App {
     pub admin: AdminData,
     pub help_text: &'static str,
     pub timeout: HashMap<TimeoutType, Timer>,
-    pub curr_screen: Screen,
-    pub curr_screen_section: ScreenSection,
+    pub active_screen: Screen,
+    pub active_screen_section: ScreenSection,
     pub active_popup: Option<Popup>,
     pub hold_popup: bool,
     pub should_clear_screen: bool,
@@ -31,10 +34,10 @@ impl std::default::Default for App {
             failed_logins: 0,
             client: ClientData::default(),
             admin: AdminData::default(),
-            help_text: "Choose an action to perform. Press Esc to go back.",
+            help_text: "",
             timeout: HashMap::new(),
-            curr_screen: Screen::Login,
-            curr_screen_section: ScreenSection::Main,
+            active_screen: Screen::Login,
+            active_screen_section: ScreenSection::Main,
             active_popup: None,
             hold_popup: false,
             should_clear_screen: false,
@@ -51,23 +54,23 @@ impl App {
         self.input.1.reset();
         match screen {
             Screen::Login => {
-                self.curr_screen = Screen::Login;
-                self.curr_screen_section = ScreenSection::Main;
+                self.active_screen = Screen::Login;
+                self.active_screen_section = ScreenSection::Main;
                 self.input_mode = InputMode::Editing(0);
                 self.failed_logins = 0;
                 self.client.active = None;
             }
             Screen::Client => {
-                self.curr_screen = Screen::Client;
-                self.curr_screen_section = ScreenSection::Main;
+                self.active_screen = Screen::Client;
+                self.active_screen_section = ScreenSection::Main;
                 self.input_mode = InputMode::Normal;
-                self.help_text = "Choose an action to perform. Press Esc to go back."
+                self.help_text = HELP_TEXT.client.main;
             }
             Screen::Admin => {
-                self.curr_screen = Screen::Admin;
-                self.curr_screen_section = ScreenSection::Left;
+                self.active_screen = Screen::Admin;
+                self.active_screen_section = ScreenSection::Left;
                 self.input_mode = InputMode::Normal;
-                self.help_text = "Choose an action. `Alt`: Switch windows. `Esc`: Go back."
+                self.help_text = HELP_TEXT.admin.main_left;
             }
             _ => { unimplemented!() }
         }
@@ -78,7 +81,7 @@ impl App {
     /// This is important because the minimum update time perceivable is defined by the EventHandler tick rate.
     pub fn add_timeout(&mut self, counter: u8, tick_rate: u16, timeout_type: TimeoutType) {
         if self.timeout.contains_key(&timeout_type) {
-            panic!("cannot add timeout {:?} to list of timeouts. It already exists", timeout_type);
+            panic!("cannot add timeout {:?} to list of timeouts since it already exists", timeout_type);
         }
 
         let tick_rate = Duration::from_millis(tick_rate as u64);

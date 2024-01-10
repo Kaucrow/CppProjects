@@ -18,7 +18,7 @@ pub struct AdminData {
     pub filters: Vec<&'static str>,
     pub filter_sidescreens: HashMap<usize, Filter>,
     pub filter_list_state: ListState,
-    pub filter_screen_section: ScreenSection,
+    pub popup_screen_section: ScreenSection,
     pub active_filter: Option<Filter>,
     pub applied_filters: HashMap<Filter, Option<String>>,
     pub button_selection: Option<Button>,
@@ -59,7 +59,7 @@ impl std::default::Default for AdminData {
                 (6, Filter::AccStatus),
             ]),
             filter_list_state: ListState::default(),
-            filter_screen_section: ScreenSection::Left,
+            popup_screen_section: ScreenSection::Left,
             active_filter: None,
             applied_filters: HashMap::from([
                 (Filter::Username, None),

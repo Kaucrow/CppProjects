@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 use sqlx::{Pool, Postgres};
 use anyhow::Result;
 use crate::{
+    HELP_TEXT,
     event::Event,
     model::{
         common::{ScreenSection, Popup, InputMode, ListType},
@@ -38,10 +39,20 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             if let Some(selected) = list_state.selected() {
                 app_lock.active_popup = Some(*popups.get(&selected).unwrap_or_else(|| panic!("popup not found in popups HashMap")));
                 match app_lock.active_popup.unwrap() {
-                    Popup::Deposit | Popup::Withdraw | Popup::Transfer | Popup::ChangePsswd => app_lock.input_mode = InputMode::Editing(0),
+                    Popup::Deposit | Popup::Withdraw | Popup::Transfer | Popup::ChangePsswd
+                    => {
+                        app_lock.input_mode = InputMode::Editing(0);
+                        app_lock.help_text = match app_lock.active_popup.unwrap() {
+                            Popup::Deposit => HELP_TEXT.client.deposit,
+                            Popup::Withdraw => HELP_TEXT.client.withdraw,
+                            Popup::Transfer => HELP_TEXT.client.transfer,
+                            Popup::ChangePsswd => HELP_TEXT.client.change_psswd,
+                            _ => panic!()
+                        }
+                    }
                     Popup::FilterClients => {
-                        app_lock.admin.filter_screen_section = ScreenSection::Left;
-                        app_lock.help_text = "Choose a filter to edit. `a`: Apply the selected filters. `Esc`: Go back.";
+                        app_lock.admin.popup_screen_section = ScreenSection::Left;
+                        app_lock.help_text = HELP_TEXT.admin.filter_left;
                     }
                     _ => {}
                 }

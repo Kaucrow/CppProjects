@@ -4,9 +4,10 @@ use rust_decimal::Decimal;
 use bcrypt::{verify, hash};
 use anyhow::Result;
 use crate::{
+    HELP_TEXT,
     event::Event,
     model::app::App,
-    update::common_fn::modify_balance,
+    update::common_fn::modify_balance
 };
 
 pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Event) -> Result<()> {
@@ -20,7 +21,7 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             {
                 let mut app_lock = app.lock().unwrap();
                 if beneficiary == app_lock.client.active.as_ref().unwrap().username {
-                    app_lock.help_text = "You can't transfer money to yourself.";
+                    app_lock.help_text = HELP_TEXT.client.transfer_to_self;
                     app_lock.hold_popup = true;
                     return Ok(());
                 }
@@ -50,7 +51,7 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
                     },
                     None => {
                         let mut app_lock = app.lock().unwrap();
-                        app_lock.help_text = "The beneficiary doesn't exist.";
+                        app_lock.help_text = HELP_TEXT.client.unknown_beneficiary;
                         app_lock.hold_popup = true;
                     }
                 }
@@ -78,7 +79,7 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
                 app_lock.input.1.reset();
                 app_lock.active_popup = None;
             } else {
-                app_lock.help_text = "Incorrect current password.";
+                app_lock.help_text = HELP_TEXT.client.incorrect_password;
                 app_lock.hold_popup = true;
             }
 

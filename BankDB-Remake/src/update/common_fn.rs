@@ -3,6 +3,7 @@ use sqlx::{Pool, Postgres};
 use rust_decimal::Decimal;
 use anyhow::Result;
 use crate::{
+    HELP_TEXT,
     event::Event,
     model::app::App,
 };
@@ -15,7 +16,7 @@ pub async fn modify_balance(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, ev
         app_lock.client.active.as_mut().unwrap().balance += amount_input;
     } else {
         if amount_input > app_lock.client.active.as_ref().unwrap().balance {
-            app_lock.help_text = "You don't have enough money.";
+            app_lock.help_text = HELP_TEXT.client.not_enough_money;
             app_lock.hold_popup = true;
             return Ok(())
         } else {

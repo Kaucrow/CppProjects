@@ -125,7 +125,7 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
             }.expect("could not send terminal event");
 
             // Screen-specific events.
-            match app_lock.curr_screen {
+            match app_lock.active_screen {
                 Screen::Login => {
                     match app_lock.active_popup {
                         Some(Popup::LoginSuccessful) => {
@@ -203,7 +203,7 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                 Screen::Admin => {
                     match app_lock.active_popup {
                         Some(Popup::FilterClients) => {
-                            match app_lock.admin.filter_screen_section {
+                            match app_lock.admin.popup_screen_section {
                                 ScreenSection::Left => {
                                     match key_event.code {
                                         KeyCode::Esc => sender.send(Event::ExitPopup),
@@ -266,7 +266,7 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                 KeyCode::Tab => sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminMain)),
                                 _ => Ok(())
                             }.expect("could not send terminal event");
-                            match app_lock.curr_screen_section {
+                            match app_lock.active_screen_section {
                                 ScreenSection::Left => {
                                     match key_event.code {
                                         KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::AdminAction)),

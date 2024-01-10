@@ -59,7 +59,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
     f.render_widget(help, chunks[1]);
 
     let (left_fg_color, right_fg_color) =
-        if let ScreenSection::Left = app_lock.curr_screen_section {
+        if let ScreenSection::Left = app_lock.active_screen_section {
             (Color::White, Color::DarkGray)
         } else {
             (Color::DarkGray, Color::White)
@@ -140,7 +140,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                 ])
                 .split(popup_rect);
                     
-            let (left_fg_color, right_fg_color) = if let ScreenSection::Left = app_lock.admin.filter_screen_section {
+            let (left_fg_color, right_fg_color) = if let ScreenSection::Left = app_lock.admin.popup_screen_section {
                 (Color::White, Color::DarkGray)
             } else {
                 (Color::DarkGray, Color::White)
@@ -203,7 +203,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
 
                     let option_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded);
 
-                    let (option1_fg_color, option2_fg_color) = match app_lock.admin.filter_screen_section {
+                    let (option1_fg_color, option2_fg_color) = match app_lock.admin.popup_screen_section {
                         ScreenSection::Left => {
                             match app_lock.admin.button_selection {
                                 Some(Button::Up) => (Color::Green, Color::DarkGray),

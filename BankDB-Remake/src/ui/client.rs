@@ -170,7 +170,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                 lower_block_title = "Beneficiary";
             } else {
                 popup_block_title = "Change Password";
-                upper_block_title = "Old Password";
+                upper_block_title = "Current Password";
                 lower_block_title = "New Password";
             }
 

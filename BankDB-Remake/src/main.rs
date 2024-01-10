@@ -8,17 +8,19 @@ mod ui;
 
 use anyhow::Result; 
 use ratatui::{ backend::CrosstermBackend, Terminal };
-use model::{common::Screen, app::App};
+use model::{common::Screen, app::App, help_text::HelpText};
 use update::update;
 use event::EventHandler;
 use tui::Tui;
 use std::sync::{Arc, Mutex};
 
+const HELP_TEXT: HelpText = HelpText::default();
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let url = "postgres://postgres:postgresPass@localhost:5432/bank";
     let pool = sqlx::postgres::PgPool::connect(url).await?;
-
+    
     let app = App::default();
     let mut app_arc = Arc::new(Mutex::new(app));
 
