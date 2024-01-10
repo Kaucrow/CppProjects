@@ -61,6 +61,7 @@ pub enum TableType {
     Clients 
 }
 
+#[derive(Debug)]
 pub enum ScreenSection {
     Main,
     Left,

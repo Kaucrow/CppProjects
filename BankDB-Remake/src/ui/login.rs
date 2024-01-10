@@ -7,6 +7,7 @@ use ratatui::{
 };
 use std::sync::{Arc, Mutex};
 use crate::{
+    HELP_TEXT,
     model::{
         common::{Popup, InputMode, TimeoutType},
         app::App,
@@ -106,12 +107,12 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
     
     let help_text = {
         if app_lock.failed_logins == 3 {
-            Text::from(format!("Login failed - Try again in: {}", app_lock.timeout.get(&TimeoutType::Login).unwrap().counter))
+            Text::from(format!("{}{}", HELP_TEXT.login.login_failed_lock, app_lock.timeout.get(&TimeoutType::Login).unwrap().counter))
         }
         else if app_lock.failed_logins > 0 {
-            Text::from("Login failed")
+            Text::from(HELP_TEXT.login.login_failed)
         } else {
-            Text::from("Press `Alt` to switch input")
+            Text::from(HELP_TEXT.login.main)
         }
     };
     let help_block = Block::default();

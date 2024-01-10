@@ -32,7 +32,7 @@ pub enum InputBlacklist {
 #[derive(Debug)]
 pub enum Event {
     Quit,
-    ExitPopup,
+    Cleanup,
     TryLogin,
     EnterScreen(Screen),
     KeyInput(KeyEvent, InputBlacklist),
@@ -48,7 +48,6 @@ pub enum Event {
     Transfer,
     ChangePasswd,
     EditFilter,
-    ExitEditFilter,
     RegisterFilter,
     ApplyFilters,
     SwitchButton,
@@ -120,7 +119,7 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
             // Events common to all screens.
             match key_event.code {
                 KeyCode::Char('c') if key_event.modifiers == KeyModifiers::CONTROL => sender.send(Event::Quit),
-                _ if app_lock.hold_popup => { sender.send(Event::ExitPopup).expect("could not send terminal event"); return; },
+                _ if app_lock.hold_popup => { sender.send(Event::Cleanup).expect("could not send terminal event"); return; },
                 _ => Ok(())
             }.expect("could not send terminal event");
 
@@ -151,13 +150,13 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                     match app_lock.active_popup {
                         Some(Popup::ViewInfo) => {
                             match key_event.code {
-                                KeyCode::Esc => sender.send(Event::ExitPopup),
+                                KeyCode::Esc => sender.send(Event::Cleanup),
                                 _ => Ok(())
                             }.expect("could not send terminal event");
                         },
                         Some(Popup::Deposit) | Some(Popup::Withdraw) => {
                             match key_event.code {
-                                KeyCode::Esc => sender.send(Event::ExitPopup),
+                                KeyCode::Esc => sender.send(Event::Cleanup),
                                 KeyCode::Enter => {
                                     if let Some(Popup::Deposit) = app_lock.active_popup { sender.send(Event::Deposit) }
                                     else { sender.send(Event::Withdraw) }
@@ -167,7 +166,7 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                         },
                         Some(Popup::Transfer) => {
                             match key_event.code {
-                                KeyCode::Esc => sender.send(Event::ExitPopup),
+                                KeyCode::Esc => sender.send(Event::Cleanup),
                                 KeyCode::Tab => sender.send(Event::SwitchInput),
                                 KeyCode::Enter => {
                                     sender.send(Event::Transfer)
@@ -182,7 +181,7 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                         },
                         Some(Popup::ChangePsswd) => {
                             match key_event.code {
-                                KeyCode::Esc => sender.send(Event::ExitPopup),
+                                KeyCode::Esc => sender.send(Event::Cleanup),
                                 KeyCode::Tab => sender.send(Event::SwitchInput),
                                 KeyCode::Enter => sender.send(Event::ChangePasswd),
                                 _ => sender.send(Event::KeyInput(key_event, InputBlacklist::None))
@@ -190,7 +189,10 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                         },
                         None => {
                             match key_event.code {
-                                KeyCode::Esc => sender.send(Event::EnterScreen(Screen::Login)),
+                                KeyCode::Esc => {
+                                    sender.send(Event::Cleanup).expect("could not send terminal event");
+                                    sender.send(Event::EnterScreen(Screen::Login))
+                                }
                                 KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::ClientAction)),
                                 KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::ClientAction)),
                                 KeyCode::Enter => sender.send(Event::SelectAction(ListType::ClientAction)),
@@ -206,14 +208,14 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                             match app_lock.admin.popup_screen_section {
                                 ScreenSection::Left => {
                                     match key_event.code {
-                                        KeyCode::Esc => sender.send(Event::ExitPopup),
+                                        KeyCode::Esc => sender.send(Event::Cleanup),
                                         KeyCode::Enter => {
                                             sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminFilters)).expect("could not send terminal event");
                                             sender.send(Event::EditFilter)
                                         }
                                         KeyCode::Char('a') => {
                                             sender.send(Event::ApplyFilters).expect("could not send terminal event");
-                                            sender.send(Event::ExitPopup)
+                                            sender.send(Event::Cleanup)
                                         }
                                         KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::ClientFilters)),
                                         KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::ClientFilters)),
@@ -223,8 +225,7 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                 ScreenSection::Right => {
                                     match key_event.code {
                                         KeyCode::Esc => {
-                                            sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminFilters)).expect("could not send terminal event");
-                                            sender.send(Event::ExitEditFilter)
+                                            sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminFilters))
                                         }
                                         KeyCode::Enter => {
                                             sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminFilters)).expect("could not send terminal event");
@@ -262,7 +263,10 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                         }
                         None => {
                             match key_event.code {
-                                KeyCode::Esc => sender.send(Event::EnterScreen(Screen::Login)),
+                                KeyCode::Esc => {
+                                    sender.send(Event::Cleanup).expect("could not send terminal event");
+                                    sender.send(Event::EnterScreen(Screen::Login))
+                                }
                                 KeyCode::Tab => sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminMain)),
                                 _ => Ok(())
                             }.expect("could not send terminal event");

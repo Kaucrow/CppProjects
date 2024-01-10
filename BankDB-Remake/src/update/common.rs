@@ -27,23 +27,6 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             app.lock().unwrap().update_timeout_counter(timeout_type);
             Ok(())
         },
-        Event::ExitPopup => {
-            let mut app_lock = app.lock().unwrap();
-            app_lock.active_popup = None;
-            app_lock.input.0.reset();
-            app_lock.input.1.reset();
-            app_lock.hold_popup = false;
-            for value in app_lock.admin.applied_filters.values_mut() {
-                *value = None;
-            }
-            app_lock.admin.filter_list_state.select(None);
-            app_lock.admin.active_filter = None;
-            match app_lock.active_screen {
-                Screen::Client => app_lock.help_text = HELP_TEXT.client.main,
-                _ => {}
-            }
-            Ok(())
-        },
         Event::EnterScreen(screen) => {
             let mut app_lock = app.lock().unwrap();
 

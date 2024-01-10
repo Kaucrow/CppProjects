@@ -1,4 +1,5 @@
 pub struct HelpText {
+    pub login: LoginHelpText,
     pub admin: AdminHelpText,
     pub client: ClientHelpText
 }
@@ -6,6 +7,11 @@ pub struct HelpText {
 impl HelpText {
     pub const fn default() -> Self {
         HelpText {
+            login: LoginHelpText {
+                main: "Press `Alt` to switch input.",
+                login_failed: "Login failed.",
+                login_failed_lock: "Login failed. - Try again in: ",
+            },
             admin: AdminHelpText {
                 main_left: "Choose an action to perform. `Alt`: Switch windows. `Esc`: Go back.",
                 main_right: "Choose a client to edit its data. `Alt`: Switch windows. `Esc`: Go backk.",
@@ -25,6 +31,12 @@ impl HelpText {
             }
         }
     }
+}
+
+pub struct LoginHelpText {
+    pub main: &'static str,
+    pub login_failed: &'static str,
+    pub login_failed_lock: &'static str,
 }
 
 pub struct ClientHelpText {
