@@ -97,7 +97,7 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
 
             app_lock.admin.query_clients = query;
             app_lock.admin.viewing_clients = 0;
-            app_lock.admin.get_clients_raw(pool).await?;
+            app_lock.admin.get_clients_raw(pool, true).await?;
 
             Ok(())
         }

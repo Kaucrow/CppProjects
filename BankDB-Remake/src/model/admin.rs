@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use anyhow::Result;
-use sqlx::{Row, FromRow, PgPool};
+use sqlx::{FromRow, PgPool};
 use ratatui::widgets::{ListState, TableState};
 use crate::model::{
     common::{Popup, Filter, Button, ScreenSection},
@@ -96,7 +96,7 @@ impl AdminData {
         }
 
         self.query_clients.push_str(format!(" LIMIT 10 OFFSET {}", self.viewing_clients).as_str());
-        let result = self.get_clients_raw(pool).await?;
+        let result = self.get_clients_raw(pool, false).await?;
         self.query_clients.truncate(self.query_clients.find(" LIMIT").unwrap());
 
         if let (GetClientsType::Next, ModifiedTable::No) = (get_type, &result) {
@@ -106,7 +106,7 @@ impl AdminData {
         Ok(result)
     }
 
-    pub async fn get_clients_raw(&mut self, pool: &PgPool) -> Result<ModifiedTable> {
+    pub async fn get_clients_raw(&mut self, pool: &PgPool, store_if_res_empty: bool) -> Result<ModifiedTable> {
         let res: Vec<Client> = {
             sqlx::query(self.query_clients.as_str())
             .fetch_all(pool)
@@ -116,7 +116,7 @@ impl AdminData {
             .collect::<Result<_, sqlx::Error>>()?
         };
 
-        if !res.is_empty() {
+        if !res.is_empty() || store_if_res_empty {
             self.stored_clients.clear();
             self.stored_clients = res;
             return Ok(ModifiedTable::Yes);
