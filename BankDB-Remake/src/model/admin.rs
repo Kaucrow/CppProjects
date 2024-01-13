@@ -3,7 +3,7 @@ use anyhow::Result;
 use sqlx::{FromRow, PgPool};
 use ratatui::widgets::{ListState, TableState};
 use crate::model::{
-    common::{Popup, Filter, Button, ScreenSection},
+    common::{Popup, CltData, Button, ScreenSection},
     client::Client,
 };
 
@@ -15,13 +15,14 @@ pub struct AdminData {
     pub viewing_clients: i32,
     pub query_clients: String,
     pub popups: HashMap<usize, Popup>,
-    pub filters: Vec<&'static str>,
-    pub filter_sidescreens: HashMap<usize, Filter>,
-    pub filter_list_state: ListState,
+    pub cltdata: Vec<&'static str>,
+    pub cltdata_sidescreens: HashMap<usize, CltData>,
+    pub cltdata_list_state: ListState,
     pub popup_screen_section: ScreenSection,
-    pub active_filter: Option<Filter>,
-    pub applied_filters: HashMap<Filter, Option<String>>,
     pub button_selection: Option<Button>,
+    pub active_cltdata: Option<CltData>,
+    pub applied_filters: HashMap<CltData, Option<String>>,
+    pub registered_cltdata: HashMap<CltData, Option<String>>,
 }
 
 impl std::default::Default for AdminData {
@@ -40,7 +41,7 @@ impl std::default::Default for AdminData {
                 (0, Popup::FilterClients),
                 (1, Popup::AddClient)
             ]),
-            filters: vec![
+            cltdata: vec![
                 "Username",
                 "Name",
                 "C.I.",
@@ -49,28 +50,38 @@ impl std::default::Default for AdminData {
                 "Account type",
                 "Account status",
             ],
-            filter_sidescreens: HashMap::from([
-                (0, Filter::Username),
-                (1, Filter::Name),
-                (2, Filter::Ci),
-                (3, Filter::AccNum),
-                (4, Filter::Balance),
-                (5, Filter::AccType),
-                (6, Filter::AccStatus),
+            cltdata_sidescreens: HashMap::from([
+                (0, CltData::Username),
+                (1, CltData::Name),
+                (2, CltData::Ci),
+                (3, CltData::AccNum),
+                (4, CltData::Balance),
+                (5, CltData::AccType),
+                (6, CltData::AccStatus),
             ]),
-            filter_list_state: ListState::default(),
+            cltdata_list_state: ListState::default(),
             popup_screen_section: ScreenSection::Left,
-            active_filter: None,
-            applied_filters: HashMap::from([
-                (Filter::Username, None),
-                (Filter::Name, None),
-                (Filter::Ci, None),
-                (Filter::AccNum, None),
-                (Filter::Balance, None),
-                (Filter::AccType, None),
-                (Filter::AccStatus, None),
-            ]),
             button_selection: None,
+            active_cltdata: None,
+            applied_filters: HashMap::from([
+                (CltData::Username, None),
+                (CltData::Name, None),
+                (CltData::Ci, None),
+                (CltData::AccNum, None),
+                (CltData::Balance, None),
+                (CltData::AccType, None),
+                (CltData::AccStatus, None),
+            ]),
+            registered_cltdata: HashMap::from([
+                (CltData::Username, None),
+                (CltData::Name, None),
+                (CltData::Ci, None),
+                (CltData::AccNum, None),
+                (CltData::Balance, None),
+                (CltData::AccType, None),
+                (CltData::AccStatus, None),
+                (CltData::PsswdHash, None),
+            ]),
         }
     }
 }
@@ -83,6 +94,12 @@ pub enum ModifiedTable {
 pub enum GetClientsType {
     Next,
     Previous
+}
+
+#[derive(Debug, PartialEq)]
+pub enum CltDataType {
+    CltData,
+    Filter
 }
 
 impl AdminData {

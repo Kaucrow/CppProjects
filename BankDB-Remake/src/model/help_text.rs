@@ -16,7 +16,10 @@ impl HelpText {
                 main_left: "Choose an action to perform. `Alt`: Switch windows. `Esc`: Go back.",
                 main_right: "Choose a client to edit its data. `Alt`: Switch windows. `Esc`: Go backk.",
                 filter_left: "Choose a filter to edit. `a`: Apply the selected filters. `Esc`: Go back.",
-                filter_right: "Input the value. `Enter`: Save changes. `Esc`: Quit editing and don't save changes."
+                filter_right: "Input the value. `Enter`: Save changes. `Esc`: Quit editing and don't save changes.",
+                add_client_left: "Choose a client data field to add. `r`: Register the client. `Esc`: Go back.",
+                add_client_right: "Input the value. `Enter`: Save changes. `Esc`: Quit editing and don't save changes.",
+                missing_cltdata: "Missing data field for ",
             },
             client: ClientHelpText {
                 main: "Choose an action to perform. `Esc`: Go back.",
@@ -57,4 +60,7 @@ pub struct AdminHelpText {
     pub main_right: &'static str,
     pub filter_left: &'static str,
     pub filter_right: &'static str,
+    pub add_client_left: &'static str,
+    pub add_client_right: &'static str,
+    pub missing_cltdata: &'static str,
 }

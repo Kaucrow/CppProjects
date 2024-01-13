@@ -43,16 +43,20 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
                     => {
                         app_lock.input_mode = InputMode::Editing(0);
                         app_lock.help_text = match app_lock.active_popup.unwrap() {
-                            Popup::Deposit => HELP_TEXT.client.deposit,
-                            Popup::Withdraw => HELP_TEXT.client.withdraw,
-                            Popup::Transfer => HELP_TEXT.client.transfer,
-                            Popup::ChangePsswd => HELP_TEXT.client.change_psswd,
+                            Popup::Deposit => HELP_TEXT.client.deposit.to_string(),
+                            Popup::Withdraw => HELP_TEXT.client.withdraw.to_string(),
+                            Popup::Transfer => HELP_TEXT.client.transfer.to_string(),
+                            Popup::ChangePsswd => HELP_TEXT.client.change_psswd.to_string(),
                             _ => panic!()
                         }
                     }
                     Popup::FilterClients => {
                         app_lock.admin.popup_screen_section = ScreenSection::Left;
-                        app_lock.help_text = HELP_TEXT.admin.filter_left;
+                        app_lock.help_text = HELP_TEXT.admin.filter_left.to_string();
+                    }
+                    Popup::AddClient => {
+                        app_lock.admin.popup_screen_section = ScreenSection::Left;
+                        app_lock.help_text = HELP_TEXT.admin.add_client_left.to_string();
                     }
                     _ => {}
                 }

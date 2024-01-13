@@ -16,12 +16,13 @@ pub struct App {
     pub failed_logins: u8,
     pub client: ClientData,
     pub admin: AdminData,
-    pub help_text: &'static str,
+    pub help_text: String,
     pub timeout: HashMap<TimeoutType, Timer>,
     pub active_screen: Screen,
     pub active_screen_section: ScreenSection,
     pub active_popup: Option<Popup>,
     pub hold_popup: bool,
+    pub switch_popup: Option<Popup>,
     pub should_clear_screen: bool,
     pub should_quit: bool,
 }
@@ -34,12 +35,13 @@ impl std::default::Default for App {
             failed_logins: 0,
             client: ClientData::default(),
             admin: AdminData::default(),
-            help_text: "",
+            help_text: String::new(),
             timeout: HashMap::new(),
             active_screen: Screen::Login,
             active_screen_section: ScreenSection::Main,
             active_popup: None,
             hold_popup: false,
+            switch_popup: None,
             should_clear_screen: false,
             should_quit: false,
         }
@@ -64,13 +66,13 @@ impl App {
                 self.active_screen = Screen::Client;
                 self.active_screen_section = ScreenSection::Main;
                 self.input_mode = InputMode::Normal;
-                self.help_text = HELP_TEXT.client.main;
+                self.help_text = HELP_TEXT.client.main.to_string();
             }
             Screen::Admin => {
                 self.active_screen = Screen::Admin;
                 self.active_screen_section = ScreenSection::Left;
                 self.input_mode = InputMode::Normal;
-                self.help_text = HELP_TEXT.admin.main_left;
+                self.help_text = HELP_TEXT.admin.main_left.to_string();
             }
             _ => { unimplemented!() }
         }

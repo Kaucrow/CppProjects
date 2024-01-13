@@ -8,7 +8,7 @@ use ratatui::{
 use std::sync::{Arc, Mutex};
 use crate::{
     model::{
-        common::{Popup, Filter, ScreenSection, Button},
+        common::{Popup, CltData, ScreenSection, Button},
         app::App
     },
     ui::common_fn::{
@@ -52,7 +52,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
     
     let help_block = Block::default().borders(Borders::TOP);
     let help = Paragraph::new(Line::from(
-        Span::raw(app_lock.help_text
+        Span::raw(&app_lock.help_text
     )))
     .block(help_block);
 
@@ -123,7 +123,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
     f.render_stateful_widget(client_table, client_table_chunks[1], &mut app_lock.admin.client_table_state);
     
     match app_lock.active_popup {
-        Some(Popup::FilterClients) => {
+        Some(Popup::FilterClients) | Some(Popup::AddClient) => {
             let popup_rect = centered_rect(
                 percent_x(f, 1.3),
                 percent_y(f, 1.0),
@@ -156,17 +156,17 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                 .border_type(BorderType::Rounded)
                 .style(Style::default().fg(right_fg_color));
             
-            let filters = List::new(app_lock.admin.filters.clone())
+            let filters = List::new(app_lock.admin.cltdata.clone())
                 .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
                 .block(filters_block);
 
-            f.render_stateful_widget(filters, popup_chunks[0], &mut app_lock.admin.filter_list_state);
+            f.render_stateful_widget(filters, popup_chunks[0], &mut app_lock.admin.cltdata_list_state);
             f.render_widget(input_block, popup_chunks[1]);
 
-            match app_lock.admin.active_filter {
-                Some(Filter::Username) | Some(Filter::Name) |
-                Some(Filter::Ci) | Some(Filter::AccNum) |
-                Some(Filter::Balance) => {
+            match app_lock.admin.active_cltdata {
+                Some(CltData::Username) | Some(CltData::Name) |
+                Some(CltData::Ci) | Some(CltData::AccNum) |
+                Some(CltData::Balance) => {
                     let input_chunks = Layout::default()
                         .direction(Direction::Vertical)
                         .constraints([
@@ -191,7 +191,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                                  input_chunks[1].y + 1,
                                 );
                 }
-                Some(Filter::AccType) | Some(Filter::AccStatus) => {
+                Some(CltData::AccType) | Some(CltData::AccStatus) => {
                     let options_chunks = Layout::default()
                         .direction(Direction::Vertical)
                         .constraints([
@@ -221,9 +221,9 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                         _ => panic!()
                     };
 
-                    let (option1_text, option2_text) = match app_lock.admin.active_filter {
-                        Some(Filter::AccType) => ("Current", "Debit"),
-                        Some(Filter::AccStatus) => ("Suspended", "Not suspended"),
+                    let (option1_text, option2_text) = match app_lock.admin.active_cltdata {
+                        Some(CltData::AccType) => ("Current", "Debit"),
+                        Some(CltData::AccStatus) => ("Suspended", "Not suspended"),
                         _ => panic!()
                     };
 
@@ -248,7 +248,38 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                 _ => { todo!("filter sidescreen") }
             }
         }
-        Some(Popup::AddClient) => todo!("add client popup"),
+        Some(Popup::AddClientPsswd) => {
+            let popup_rect = centered_rect(
+                percent_x(f, 0.8),
+                percent_y(f, 0.5), 
+                f.size()
+            );
+
+            f.render_widget(Clear, popup_rect);
+
+            let popup_chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Percentage(40),
+                    Constraint::Min(3),
+                    Constraint::Percentage(50),
+                ])
+                .split(popup_rect.inner(&Margin::new(2, 0)));
+
+            let popup_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded).title("Add a password");
+
+            let input = Paragraph::new(Line::from(
+                Span::raw(format!("{}", app_lock.input.0))
+            ));
+
+            f.render_widget(popup_block, popup_rect);
+            f.render_widget(input, popup_chunks[1]);
+
+            f.set_cursor(popup_chunks[1].x
+                                    + app_lock.input.0.visual_cursor() as u16,
+                         popup_chunks[1].y,
+                        );
+        }
         _ => {}
     }
 }

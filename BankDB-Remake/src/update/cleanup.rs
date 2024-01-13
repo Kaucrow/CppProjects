@@ -4,7 +4,7 @@ use crate::{
     HELP_TEXT,
     model::{
         app::App,
-        common::{Popup, Screen, ScreenSection},
+        common::{Popup, Screen, InputMode},
     }
 };
 
@@ -19,25 +19,33 @@ pub fn cleanup(app: &mut Arc<Mutex<App>>) -> Result<()> {
                 app_lock.input.1.reset();
             }
             Popup::Deposit | Popup::Withdraw => {
-                app_lock.help_text = HELP_TEXT.client.main;
+                app_lock.help_text = HELP_TEXT.client.main.to_string();
                 app_lock.input.0.reset();
             }
             Popup::Transfer | Popup::ChangePsswd => {
-                app_lock.help_text = HELP_TEXT.client.main;
+                app_lock.help_text = HELP_TEXT.client.main.to_string();
                 app_lock.input.0.reset();
                 app_lock.input.1.reset();
             }
-            Popup::FilterClients => {
-                app_lock.help_text = HELP_TEXT.admin.main_left;
-                app_lock.admin.filter_list_state.select(None);
-                app_lock.admin.active_filter = None;
+            Popup::FilterClients | Popup::AddClient => {
+                app_lock.help_text = HELP_TEXT.admin.main_left.to_string();
+                app_lock.admin.cltdata_list_state.select(None);
+                app_lock.admin.active_cltdata = None;
                 app_lock.input.0.reset();
                 app_lock.input.1.reset();
-            }
-            Popup::AddClient => {
-                app_lock.help_text = HELP_TEXT.admin.main_left;
-                app_lock.input.0.reset();
-                app_lock.input.1.reset();
+                if let Popup::AddClient = popup {
+                    match app_lock.switch_popup {
+                        Some(Popup::AddClientPsswd) => {
+                            app_lock.active_popup = Some(Popup::AddClientPsswd);
+                            app_lock.input_mode = InputMode::Editing(0);
+                            return Ok(());
+                        }
+                        None =>
+                            app_lock.admin.registered_cltdata.values_mut().for_each(|value| *value = None),
+                        _ =>
+                            { panic!("popup {:?} can't switch to {:?}", popup, app_lock.switch_popup) }
+                    }
+                }
             }
             _ => {}
         }

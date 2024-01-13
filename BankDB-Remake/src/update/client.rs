@@ -21,7 +21,7 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             {
                 let mut app_lock = app.lock().unwrap();
                 if beneficiary == app_lock.client.active.as_ref().unwrap().username {
-                    app_lock.help_text = HELP_TEXT.client.transfer_to_self;
+                    app_lock.help_text = HELP_TEXT.client.transfer_to_self.to_string();
                     app_lock.hold_popup = true;
                     return Ok(());
                 }
@@ -51,7 +51,7 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
                     },
                     None => {
                         let mut app_lock = app.lock().unwrap();
-                        app_lock.help_text = HELP_TEXT.client.unknown_beneficiary;
+                        app_lock.help_text = HELP_TEXT.client.unknown_beneficiary.to_string();
                         app_lock.hold_popup = true;
                     }
                 }
@@ -79,7 +79,7 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
                 app_lock.input.1.reset();
                 app_lock.active_popup = None;
             } else {
-                app_lock.help_text = HELP_TEXT.client.incorrect_password;
+                app_lock.help_text = HELP_TEXT.client.incorrect_password.to_string();
                 app_lock.hold_popup = true;
             }
 

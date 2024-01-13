@@ -7,7 +7,7 @@ use crossterm::event::{
     KeyModifiers,
 };
 use std::{
-    sync::{mpsc, Arc, Mutex},
+    sync::{mpsc, Arc, Mutex, MutexGuard},
     thread,
     time::{Duration, Instant}
 };
@@ -15,16 +15,20 @@ use anyhow::Result;
 use crate::model::{
     common::{
         Popup, Screen, TimeoutType, ListType, TableType, InputMode,
-        ScreenSection, ScreenSectionType, Filter
+        ScreenSection, ScreenSectionType, CltData
     },
+    admin::CltDataType,
     app::App,
 };
+
+const SENDER_ERR: &'static str = "could not send terminal event";
 
 #[derive(Debug)]
 pub enum InputBlacklist {
     None,
     Money,
     Alphabetic,
+    NoSpace,
     Numeric,
 }
 
@@ -47,10 +51,12 @@ pub enum Event {
     Withdraw,
     Transfer,
     ChangePasswd,
-    EditFilter,
-    RegisterFilter,
-    ApplyFilters,
+    EditCltData,
     SwitchButton,
+    RegisterCltData(CltDataType),
+    ApplyFilters,
+    CheckAddClient,
+    AddClient,
     Resize,
     TimeoutStep(TimeoutType),
 }
@@ -86,7 +92,7 @@ impl EventHandler {
                         last_tick = Instant::now();
                         for (timeout_type, timer) in &app_arc.lock().unwrap().timeout {
                             if timer.last_update.elapsed() > timer.tick_rate {
-                                sender.send(Event::TimeoutStep(*timeout_type)).expect("could not send terminal event");
+                                sender.send(Event::TimeoutStep(*timeout_type)).expect(SENDER_ERR);
                             }
                         }
                     }
@@ -119,9 +125,9 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
             // Events common to all screens.
             match key_event.code {
                 KeyCode::Char('c') if key_event.modifiers == KeyModifiers::CONTROL => sender.send(Event::Quit),
-                _ if app_lock.hold_popup => { sender.send(Event::Cleanup).expect("could not send terminal event"); return; },
+                _ if app_lock.hold_popup => { sender.send(Event::Cleanup).expect(SENDER_ERR); return; },
                 _ => Ok(())
-            }.expect("could not send terminal event");
+            }.expect(SENDER_ERR);
 
             // Screen-specific events.
             match app_lock.active_screen {
@@ -133,15 +139,15 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                 else { sender.send(Event::EnterScreen(Screen::Client)) }
                             } else {
                                 Ok(())
-                            }.expect("could not send terminal event");
+                            }.expect(SENDER_ERR);
                         },
                         None => {
                             match key_event.code {
                                 KeyCode::Esc => sender.send(Event::Quit),
                                 KeyCode::Enter => sender.send(Event::TryLogin),
                                 KeyCode::Tab => sender.send(Event::SwitchInput),
-                                _ => sender.send(Event::KeyInput(key_event, InputBlacklist::None)),
-                            }.expect("could not send terminal event");
+                                _ => sender.send(Event::KeyInput(key_event, InputBlacklist::NoSpace)),
+                            }.expect(SENDER_ERR);
                         }
                         _ => { unimplemented!("popup not found in match block") }
                     }
@@ -152,7 +158,7 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                             match key_event.code {
                                 KeyCode::Esc => sender.send(Event::Cleanup),
                                 _ => Ok(())
-                            }.expect("could not send terminal event");
+                            }.expect(SENDER_ERR);
                         },
                         Some(Popup::Deposit) | Some(Popup::Withdraw) => {
                             match key_event.code {
@@ -162,7 +168,7 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                     else { sender.send(Event::Withdraw) }
                                 }
                                 _ => sender.send(Event::KeyInput(key_event, InputBlacklist::Money))
-                            }.expect("could not send terminal event");
+                            }.expect(SENDER_ERR);
                         },
                         Some(Popup::Transfer) => {
                             match key_event.code {
@@ -177,7 +183,7 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                         else { sender.send(Event::KeyInput(key_event, InputBlacklist::None)) }
                                     } else { Ok(()) }
                                 }
-                            }.expect("could not send terminal event");
+                            }.expect(SENDER_ERR);
                         },
                         Some(Popup::ChangePsswd) => {
                             match key_event.code {
@@ -185,19 +191,19 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                 KeyCode::Tab => sender.send(Event::SwitchInput),
                                 KeyCode::Enter => sender.send(Event::ChangePasswd),
                                 _ => sender.send(Event::KeyInput(key_event, InputBlacklist::None))
-                            }.expect("could not send terminal event");
+                            }.expect(SENDER_ERR);
                         },
                         None => {
                             match key_event.code {
                                 KeyCode::Esc => {
-                                    sender.send(Event::Cleanup).expect("could not send terminal event");
+                                    sender.send(Event::Cleanup).expect(SENDER_ERR);
                                     sender.send(Event::EnterScreen(Screen::Login))
                                 }
                                 KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::ClientAction)),
                                 KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::ClientAction)),
                                 KeyCode::Enter => sender.send(Event::SelectAction(ListType::ClientAction)),
                                 _ => Ok(())
-                            }.expect("could not send terminal event");
+                            }.expect(SENDER_ERR);
                         }
                         _ => { unimplemented!("popup not found in match block") }
                     }
@@ -210,17 +216,17 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                     match key_event.code {
                                         KeyCode::Esc => sender.send(Event::Cleanup),
                                         KeyCode::Enter => {
-                                            sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminFilters)).expect("could not send terminal event");
-                                            sender.send(Event::EditFilter)
+                                            sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminFilters)).expect(SENDER_ERR);
+                                            sender.send(Event::EditCltData)
                                         }
                                         KeyCode::Char('a') => {
-                                            sender.send(Event::ApplyFilters).expect("could not send terminal event");
+                                            sender.send(Event::ApplyFilters).expect(SENDER_ERR);
                                             sender.send(Event::Cleanup)
                                         }
-                                        KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::ClientFilters)),
-                                        KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::ClientFilters)),
+                                        KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::CltData)),
+                                        KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::CltData)),
                                         _ => Ok(())
-                                    }.expect("could not send terminal event");
+                                    }.expect(SENDER_ERR);
                                 }
                                 ScreenSection::Right => {
                                     match key_event.code {
@@ -228,48 +234,70 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                             sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminFilters))
                                         }
                                         KeyCode::Enter => {
-                                            sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminFilters)).expect("could not send terminal event");
-                                            sender.send(Event::RegisterFilter)
+                                            sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminFilters)).expect(SENDER_ERR);
+                                            sender.send(Event::RegisterCltData(CltDataType::Filter))
                                         }
                                         _ => Ok(())
-                                    }.expect("could not send terminal event");
+                                    }.expect(SENDER_ERR);
 
-                                    match app_lock.admin.active_filter {
-                                        Some(Filter::Username) => {
-                                            sender.send(Event::KeyInput(key_event, InputBlacklist::None))
-                                        }
-                                        Some(Filter::Name) => {
-                                            sender.send(Event::KeyInput(key_event, InputBlacklist::Alphabetic))
-                                        }
-                                        Some(Filter::Ci) | Some(Filter::AccNum) => {
-                                            sender.send(Event::KeyInput(key_event, InputBlacklist::Numeric))
-                                        }
-                                        Some(Filter::Balance) => {
-                                            sender.send(Event::KeyInput(key_event, InputBlacklist::Money))
-                                        }
-                                        Some(Filter::AccStatus) | Some(Filter::AccType) => {
-                                            match key_event.code {
-                                                KeyCode::Tab => {
-                                                    sender.send(Event::SwitchButton)
-                                                }
-                                                _ => Ok(())
-                                            }
-                                        }
-                                        _ => todo!("filter sidescreen events")
-                                    }.expect("could not send terminal event");
+                                    handle_update_cltdata(&key_event, sender, &app_lock);
                                 }
                                 _ => {}
                             }
                         }
+                        Some(Popup::AddClient) => {
+                            match app_lock.admin.popup_screen_section {
+                                ScreenSection::Left => {
+                                    match key_event.code {
+                                        KeyCode::Esc => sender.send(Event::Cleanup),
+                                        KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::CltData)),
+                                        KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::CltData)),
+                                        KeyCode::Char('r') => {
+                                            sender.send(Event::CheckAddClient).expect(SENDER_ERR);
+                                            sender.send(Event::Cleanup)
+                                        }
+                                        KeyCode::Enter => {
+                                            sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminFilters)).expect(SENDER_ERR);
+                                            sender.send(Event::EditCltData)
+                                        }
+                                        _ => Ok(())
+                                    }.expect(SENDER_ERR)
+                                }
+                                ScreenSection::Right => {
+                                    match key_event.code {
+                                        KeyCode::Esc => {
+                                            sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminAddClient))
+                                        }
+                                        KeyCode::Enter => {
+                                            sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminAddClient)).expect(SENDER_ERR);
+                                            sender.send(Event::RegisterCltData(CltDataType::CltData))
+                                        }
+                                        _ => Ok(())
+                                    }.expect(SENDER_ERR);
+
+                                    handle_update_cltdata(&key_event, sender, &app_lock);
+                                }
+                                _ => {}
+                            }
+                        }
+                        Some(Popup::AddClientPsswd) => {
+                            match key_event.code {
+                                KeyCode::Enter => {
+                                    sender.send(Event::AddClient).expect(SENDER_ERR);
+                                    sender.send(Event::Cleanup)
+                                }
+                                _ => sender.send(Event::KeyInput(key_event, InputBlacklist::NoSpace))
+                            }.expect(SENDER_ERR);
+                        }
                         None => {
                             match key_event.code {
                                 KeyCode::Esc => {
-                                    sender.send(Event::Cleanup).expect("could not send terminal event");
+                                    sender.send(Event::Cleanup).expect(SENDER_ERR);
                                     sender.send(Event::EnterScreen(Screen::Login))
                                 }
                                 KeyCode::Tab => sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminMain)),
                                 _ => Ok(())
-                            }.expect("could not send terminal event");
+                            }.expect(SENDER_ERR);
                             match app_lock.active_screen_section {
                                 ScreenSection::Left => {
                                     match key_event.code {
@@ -277,14 +305,14 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                         KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::AdminAction)),
                                         KeyCode::Enter => sender.send(Event::SelectAction(ListType::AdminAction)),
                                         _ => Ok(())
-                                    }.expect("could not send terminal event");
+                                    }.expect(SENDER_ERR);
                                 }
                                 ScreenSection::Right => {
                                     match key_event.code {
                                         KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousTableItem(TableType::Clients)),
                                         KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextTableItem(TableType::Clients)),
                                         _ => Ok(())
-                                    }.expect("could not send terminal event");
+                                    }.expect(SENDER_ERR);
                                 },
                                 _ => {}
                             }
@@ -303,7 +331,33 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
             } else {
                 Ok(())
             }
-        }.expect("could not send terminal event"),
+        }.expect(SENDER_ERR),
         _ => {}
     }
+}
+
+fn handle_update_cltdata(key_event: &KeyEvent, sender: &mpsc::Sender<Event>, app_lock: &MutexGuard<'_, App>) {
+    match app_lock.admin.active_cltdata {
+        Some(CltData::Username) => {
+            sender.send(Event::KeyInput(*key_event, InputBlacklist::NoSpace))
+        }
+        Some(CltData::Name) => {
+            sender.send(Event::KeyInput(*key_event, InputBlacklist::Alphabetic))
+        }
+        Some(CltData::Ci) | Some(CltData::AccNum) => {
+            sender.send(Event::KeyInput(*key_event, InputBlacklist::Numeric))
+        }
+        Some(CltData::Balance) => {
+            sender.send(Event::KeyInput(*key_event, InputBlacklist::Money))
+        }
+        Some(CltData::AccStatus) | Some(CltData::AccType) => {
+            match key_event.code {
+                KeyCode::Tab => {
+                    sender.send(Event::SwitchButton)
+                }
+                _ => Ok(())
+            }
+        }
+        _ => todo!("filter sidescreen events")
+    }.expect(SENDER_ERR);
 }

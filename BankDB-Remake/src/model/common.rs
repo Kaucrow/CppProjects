@@ -8,7 +8,7 @@ pub enum Screen {
     Admin,
 }
 
-#[derive(Copy, Clone)]
+#[derive(PartialEq, Eq, Copy, Clone)]
 #[cfg_attr(feature = "debug_derive", derive(Debug))]
 pub enum Popup {
     LoginSuccessful,
@@ -19,15 +19,17 @@ pub enum Popup {
     ChangePsswd,
     FilterClients,
     AddClient,
+    AddClientPsswd,
 }
 
+#[derive(Copy, Clone)]
 pub enum Button {
     Up,
     Down
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, Hash)]
-pub enum Filter {
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+pub enum CltData {
     Username,
     Name,
     Ci,
@@ -35,6 +37,22 @@ pub enum Filter {
     Balance,
     AccType,
     AccStatus,
+    PsswdHash,
+}
+
+impl CltData {
+    pub fn as_sql_col(&self) -> String {
+        match self {
+            Self::Username => String::from("username"),
+            Self::Name => String::from("name"),
+            Self::Ci => String::from("ci"),
+            Self::AccNum => String::from("account_number"),
+            Self::Balance => String::from("balance"),
+            Self::AccType => String::from("account_type"),
+            Self::AccStatus => String::from("account_status"),
+            Self::PsswdHash => String::from("password")
+        }
+    }
 }
 
 pub enum InputMode {
@@ -53,7 +71,7 @@ pub enum TimeoutType {
 pub enum ListType {
     ClientAction,
     AdminAction,
-    ClientFilters,
+    CltData,
 }
 
 #[derive(Debug)]
@@ -72,6 +90,7 @@ pub enum ScreenSection {
 pub enum ScreenSectionType {
     AdminMain,
     AdminFilters,
+    AdminAddClient,
 }
 
 pub struct InputFields(pub Input, pub Input);

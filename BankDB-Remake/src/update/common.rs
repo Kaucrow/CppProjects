@@ -99,14 +99,19 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
                     HELP_TEXT.admin.filter_left,
                     HELP_TEXT.admin.filter_right)
                 }
+                ScreenSectionType::AdminAddClient => {
+                    (&mut app_lock.admin.popup_screen_section,
+                    HELP_TEXT.admin.add_client_left,
+                    HELP_TEXT.admin.add_client_right)
+                }
             };
 
             if let ScreenSection::Left = active_screen_section {
                 *active_screen_section = ScreenSection::Right;
-                app_lock.help_text = help_text_right; 
+                app_lock.help_text = help_text_right.to_string();
             } else {
                 *active_screen_section = ScreenSection::Left;
-                app_lock.help_text = help_text_left; 
+                app_lock.help_text = help_text_left.to_string();
             }
             Ok(())
         },
@@ -146,6 +151,11 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
                     }
                     InputBlacklist::Alphabetic => {
                         if !char.is_alphabetic() && char != ' ' {
+                            return Ok(())
+                        }
+                    }
+                    InputBlacklist::NoSpace => {
+                        if char == ' ' {
                             return Ok(())
                         }
                     }
