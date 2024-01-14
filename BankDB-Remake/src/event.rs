@@ -125,7 +125,14 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
             // Events common to all screens.
             match key_event.code {
                 KeyCode::Char('c') if key_event.modifiers == KeyModifiers::CONTROL => sender.send(Event::Quit),
-                _ if app_lock.hold_popup => { sender.send(Event::Cleanup).expect(SENDER_ERR); return; },
+                _ if app_lock.hold_popup => {
+                    if !matches!(app_lock.active_popup, Some(Popup::AddClient)) {
+                        sender.send(Event::Cleanup).expect(SENDER_ERR);
+                        return; 
+                    } else {
+                        Ok(())
+                    }
+                }
                 _ => Ok(())
             }.expect(SENDER_ERR);
 
@@ -288,6 +295,9 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                 }
                                 _ => sender.send(Event::KeyInput(key_event, InputBlacklist::NoSpace))
                             }.expect(SENDER_ERR);
+                        }
+                        Some(Popup::AddClientSuccess) => {
+                            sender.send(Event::Cleanup).expect(SENDER_ERR);
                         }
                         None => {
                             match key_event.code {

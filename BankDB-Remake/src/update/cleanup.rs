@@ -12,7 +12,6 @@ pub fn cleanup(app: &mut Arc<Mutex<App>>) -> Result<()> {
     let mut app_lock = app.lock().unwrap();
 
     if let Some(popup) = app_lock.active_popup {
-        app_lock.hold_popup = false;
         match popup {
             Popup::LoginSuccessful => {
                 app_lock.input.0.reset();
@@ -28,7 +27,6 @@ pub fn cleanup(app: &mut Arc<Mutex<App>>) -> Result<()> {
                 app_lock.input.1.reset();
             }
             Popup::FilterClients | Popup::AddClient => {
-                app_lock.help_text = HELP_TEXT.admin.main_left.to_string();
                 app_lock.admin.cltdata_list_state.select(None);
                 app_lock.admin.active_cltdata = None;
                 app_lock.input.0.reset();
@@ -41,11 +39,21 @@ pub fn cleanup(app: &mut Arc<Mutex<App>>) -> Result<()> {
                             return Ok(());
                         }
                         None =>
-                            app_lock.admin.registered_cltdata.values_mut().for_each(|value| *value = None),
+                            if app_lock.hold_popup { return Ok(()); }
+                            else {
+                                app_lock.admin.registered_cltdata.values_mut().for_each(|value| *value = None);
+                            },
                         _ =>
-                            { panic!("popup {:?} can't switch to {:?}", popup, app_lock.switch_popup) }
+                            panic!("popup {:?} can't switch to {:?}", popup, app_lock.switch_popup)
                     }
                 }
+                app_lock.help_text = HELP_TEXT.admin.main_left.to_string();
+            }
+            Popup::AddClientPsswd => {
+                app_lock.input.0.reset();
+                app_lock.admin.registered_cltdata.values_mut().for_each(|value| *value = None);
+                app_lock.active_popup = Some(Popup::AddClientSuccess);
+                return Ok(());
             }
             _ => {}
         }
@@ -67,6 +75,7 @@ pub fn cleanup(app: &mut Arc<Mutex<App>>) -> Result<()> {
         }
     }
 
+    app_lock.hold_popup = false;
     app_lock.active_popup = None;
 
     Ok(())

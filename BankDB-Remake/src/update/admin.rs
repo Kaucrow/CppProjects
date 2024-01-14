@@ -1,4 +1,5 @@
 use std::sync::{Arc, Mutex};
+use rust_decimal::Decimal;
 use sqlx::{Pool, Postgres, query::Query, postgres::PgArguments};
 use anyhow::Result;
 use bcrypt::hash;
@@ -116,10 +117,11 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
         Event::CheckAddClient => {
             let mut app_lock = app.lock().unwrap();
 
-            /*for (cltdata, value) in app_lock.admin.registered_cltdata.iter() {
+            for (cltdata, value) in app_lock.admin.registered_cltdata.iter() {
                 if *cltdata != CltData::PsswdHash {
                     if value.is_none() {
                         app_lock.help_text = format!("{}{:?}", HELP_TEXT.admin.missing_cltdata, cltdata);
+                        app_lock.hold_popup = true;
                         return Ok(());
                     }
                     else if matches!(cltdata, CltData::Username | CltData::Ci | CltData::AccNum) {
@@ -127,7 +129,7 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
 
                         let mut query: Query<'_, Postgres, PgArguments> = sqlx::query(&query_base.as_str());
 
-                        if let Ok(parsed_value) = value.as_ref().unwrap().parse::<i32>() {
+                        if let Ok(parsed_value) = value.as_ref().unwrap().parse::<i64>() {
                             query = query.bind(parsed_value);
                         } else {
                             query = query.bind(value);
@@ -138,11 +140,12 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
                             .await?
                             .is_some() {
                                 app_lock.help_text = format!("{:?} already exists.", cltdata);
+                                app_lock.hold_popup = true;
                                 return Ok(());
                             }
                     }
                 }                         
-            }*/
+            }
 
             app_lock.switch_popup = Some(Popup::AddClientPsswd);
 
@@ -155,7 +158,43 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
 
             app_lock.admin.registered_cltdata.insert(CltData::PsswdHash, Some(psswd_hash));
 
-            todo!("insert client in `client` table");
+            let mut query_text = String::from("INSERT INTO clients (");
+
+            app_lock.admin.registered_cltdata.keys()
+                .for_each(|cltdata| query_text.push_str(format!("{},", cltdata.as_sql_col()).as_str()));
+
+            query_text.pop();
+            query_text.push_str(") VALUES ($1,$2,$3,$4,$5,$6,$7,$8)");
+
+            let mut query: Query<'_, Postgres, PgArguments> = sqlx::query(query_text.as_str());
+
+            for (cltdata, value) in app_lock.admin.registered_cltdata.iter() {
+                if let Some(value) = value {
+                    match cltdata {
+                        CltData::Ci | CltData::AccNum =>
+                            query = query.bind(value.parse::<i64>().unwrap()),
+                        
+                        CltData::Balance =>
+                            query = query.bind(Decimal::from_str_exact(value).unwrap()),
+
+                        CltData::AccStatus =>
+                            match value.as_str() {
+                                "suspended" => query = query.bind(true),
+                                "not suspended" => query = query.bind(false),
+                                _ => panic!("unknown value found on {:?}", cltdata)
+                            }
+
+                        _ =>
+                            query = query.bind(value)
+                    }
+                } else {
+                    query = query.bind("null,");
+                }
+            }
+
+            query.execute(pool).await?;
+
+            app_lock.switch_popup = Some(Popup::AddClientSuccess);
 
             Ok(())
         }

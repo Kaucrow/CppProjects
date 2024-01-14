@@ -280,6 +280,24 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                          popup_chunks[1].y,
                         );
         }
+        Some(Popup::AddClientSuccess) => {
+            let popup_rect = centered_rect(
+                percent_x(f, 0.6),
+                percent_y(f, 0.4),
+                f.size()
+            );
+
+            f.render_widget(Clear, popup_rect);
+
+            let text = Paragraph::new(vec![
+                Line::from(Span::raw("Added client")),
+                Line::from(Span::raw("successfully."))
+            ])
+            .alignment(Alignment::Center)
+            .block(Block::default().borders(Borders::ALL).border_type(BorderType::Thick));
+
+            f.render_widget(text, popup_rect);
+        }
         _ => {}
     }
 }

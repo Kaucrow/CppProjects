@@ -20,6 +20,7 @@ pub enum Popup {
     FilterClients,
     AddClient,
     AddClientPsswd,
+    AddClientSuccess,
 }
 
 #[derive(Copy, Clone)]
@@ -49,7 +50,7 @@ impl CltData {
             Self::AccNum => String::from("account_number"),
             Self::Balance => String::from("balance"),
             Self::AccType => String::from("account_type"),
-            Self::AccStatus => String::from("account_status"),
+            Self::AccStatus => String::from("suspended"),
             Self::PsswdHash => String::from("password")
         }
     }
