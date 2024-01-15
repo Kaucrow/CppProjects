@@ -6,7 +6,7 @@ use bcrypt::hash;
 use crate::{
     event::Event,
     model::{
-        common::{Popup, InputMode, CltData, Button},
+        common::{Popup, InputMode, CltData, Button, SideScreen},
         app::App, admin::CltDataType,
     }, HELP_TEXT,
 };
@@ -197,6 +197,17 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
             app_lock.switch_popup = Some(Popup::AddClientSuccess);
 
             Ok(())
+        }
+        Event::SelectClient => {
+            let mut app_lock = app.lock().unwrap();
+
+            let selection = app_lock.admin.stored_clients.get(app_lock.admin.client_table_state.selected().unwrap_or(0)).unwrap();
+
+            app_lock.client.active = Some(selection.clone());
+
+            app_lock.admin.active_sidescreen = SideScreen::AdminClientEdit;
+
+            Ok(())    
         }
         _ => panic!("An event of type {:?} was passed to the admin update function", event)
     }

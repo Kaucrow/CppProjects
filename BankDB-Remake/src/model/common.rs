@@ -8,6 +8,11 @@ pub enum Screen {
     Admin,
 }
 
+pub enum SideScreen {
+    AdminClientTable,
+    AdminClientEdit,
+}
+
 #[derive(PartialEq, Eq, Copy, Clone)]
 #[cfg_attr(feature = "debug_derive", derive(Debug))]
 pub enum Popup {

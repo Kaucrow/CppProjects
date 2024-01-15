@@ -3,12 +3,12 @@ use ratatui::{
     prelude::{Alignment, Frame},
     style::{Color, Style, Modifier},
     text::{Line, Span, Text},
-    widgets::{Block, List, Row, Table, BorderType, Borders, Paragraph, Clear}
+    widgets::{Block, List, ListItem, Row, Table, BorderType, Borders, Paragraph, Clear}
 };
 use std::sync::{Arc, Mutex};
 use crate::{
     model::{
-        common::{Popup, CltData, ScreenSection, Button},
+        common::{Popup, CltData, ScreenSection, Button, SideScreen},
         app::App
     },
     ui::common_fn::{
@@ -79,49 +79,111 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
 
     f.render_stateful_widget(actions, left_chunks[1], &mut app_lock.admin.action_list_state);
     
-    let client_table_chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage(5),
-            Constraint::Percentage(90),
-            Constraint::Percentage(5),
-        ])
-        .split(main_chunks[1].inner(&Margin::new(0, 1)));
+    let right_side_block = Block::default().borders(Borders::ALL).style(Style::default().fg(right_fg_color));
+    f.render_widget(right_side_block, main_chunks[1]);
 
-    let client_table_block = Block::default().borders(Borders::ALL).style(Style::default().fg(right_fg_color));
-    
-    let header =
-        Row::new(vec!["Username", "Name", "C.I.", "Acc. num.",])
-        .style(Style::default().fg(Color::Cyan));
+    match app_lock.admin.active_sidescreen {
+        SideScreen::AdminClientTable => {
+            let client_table_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Percentage(5),
+                    Constraint::Percentage(90),
+                    Constraint::Percentage(5),
+                ])
+                .split(main_chunks[1].inner(&Margin::new(0, 1)));
 
-    let widths = [
-        Constraint::Length(15),
-        Constraint::Length(15),
-        Constraint::Length(9),
-        Constraint::Length(9),
-    ];
-    
-    let rows: Vec<Row> =
-        app_lock.admin.stored_clients
-        .iter()
-        .map(|client| {
-            Row::new(vec![
-                client.username.clone(),
-                client.name.clone(),
-                client.ci.to_string(),
-                client.account_number.to_string()])
-        })
-        .collect();
+            let header =
+                Row::new(vec!["Username", "Name", "C.I.", "Acc. num.",])
+                .style(Style::default().fg(Color::Cyan));
 
-    let client_table = Table::new(rows, widths)
-        .column_spacing(3)
-        .header(header.bottom_margin(1))
-        .highlight_style(Style::default().fg(Color::Green).add_modifier(Modifier::REVERSED));
-        //.block(Block::default().borders(Borders::ALL));
+            let widths = [
+                Constraint::Length(15),
+                Constraint::Length(15),
+                Constraint::Length(9),
+                Constraint::Length(9),
+            ];
     
-    f.render_widget(client_table_block, main_chunks[1]);
-    f.render_stateful_widget(client_table, client_table_chunks[1], &mut app_lock.admin.client_table_state);
+            let rows: Vec<Row> =
+                app_lock.admin.stored_clients
+                .iter()
+                .map(|client| {
+                    Row::new(vec![
+                        client.username.clone(),
+                        client.name.clone(),
+                        client.ci.to_string(),
+                        client.account_number.to_string()])
+                })
+                .collect();
+
+            let client_table = Table::new(rows, widths)
+                .column_spacing(3)
+                .header(header.bottom_margin(1))
+                .highlight_style(Style::default().fg(Color::Green).add_modifier(Modifier::REVERSED));
+                //.block(Block::default().borders(Borders::ALL));
     
+            f.render_stateful_widget(client_table, client_table_chunks[1], &mut app_lock.admin.client_table_state);
+        }
+        SideScreen::AdminClientEdit => {
+            let client_edit_chunks = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Percentage(35),
+                    Constraint::Percentage(65)
+                ])
+                .split(main_chunks[1].inner(&Margin::new(1, 1)));
+
+            let pfp_chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Min(1),
+                    Constraint::Percentage(100),
+                ])
+                .split(client_edit_chunks[0].inner(&Margin::new(1, 0)));
+
+            let pfp_block = Block::default().borders(Borders::ALL).border_type(BorderType::Rounded);
+            
+            let pfp = Paragraph::new(Text::from(
+                app_lock.admin.user_logo.clone()
+            ))
+            .alignment(Alignment::Center)
+            .block(pfp_block);
+
+            let name = Paragraph::new(Line::from(
+                Span::styled(&app_lock.client.active.as_ref().unwrap().name, Style::default().fg(Color::Green))
+            ))
+            .alignment(Alignment::Center);
+
+            f.render_widget(name, pfp_chunks[0]);
+            f.render_widget(pfp, pfp_chunks[1]);
+
+            let client_data_chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([
+                    Constraint::Percentage(10),
+                    Constraint::Percentage(90),
+                    Constraint::Percentage(10),
+                ])
+                .split(client_edit_chunks[1].inner(&Margin::new(1, 0)));
+
+            let client_data: Vec<ListItem> =
+                app_lock.admin.client_edit_fields
+                .iter()
+                .zip(app_lock.client.active.as_ref().unwrap().skip(1))
+                .map(|(field, value)|
+                    ListItem::new(Line::from(vec![
+                        Span::styled(*field, Style::default().add_modifier(Modifier::BOLD)),
+                        Span::raw(value)
+                    ]))
+                )
+                .collect();
+
+            let client_data_list = List::new(client_data);
+
+            f.render_widget(client_data_list, client_data_chunks[1]);
+        }
+    }
+
     match app_lock.active_popup {
         Some(Popup::FilterClients) | Some(Popup::AddClient) => {
             let popup_rect = centered_rect(

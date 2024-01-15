@@ -9,6 +9,7 @@ dependencies = [
  "anyhow",
  "bcrypt",
  "crossterm",
+ "lazy_static",
  "ratatui",
  "rust_decimal",
  "sqlx",

@@ -14,7 +14,7 @@ impl HelpText {
             },
             admin: AdminHelpText {
                 main_left: "Choose an action to perform. `Alt`: Switch windows. `Esc`: Go back.",
-                main_right: "Choose a client to edit its data. `Alt`: Switch windows. `Esc`: Go backk.",
+                main_right: "Choose a client to edit its data. `Alt`: Switch windows. `Esc`: Go back.",
                 filter_left: "Choose a filter to edit. `a`: Apply the selected filters. `Esc`: Go back.",
                 filter_right: "Input the value. `Enter`: Save changes. `Esc`: Quit editing and don't save changes.",
                 add_client_left: "Choose a client data field to add. `r`: Register the client. `Esc`: Go back.",

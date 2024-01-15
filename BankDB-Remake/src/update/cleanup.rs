@@ -4,7 +4,7 @@ use crate::{
     HELP_TEXT,
     model::{
         app::App,
-        common::{Popup, Screen, InputMode},
+        common::{Popup, Screen, InputMode, SideScreen},
     }
 };
 
@@ -63,12 +63,19 @@ pub fn cleanup(app: &mut Arc<Mutex<App>>) -> Result<()> {
                 app_lock.client.action_list_state.select(None);
             }
             Screen::Admin => {
-                app_lock.admin.action_list_state.select(None);
-                app_lock.admin.client_table_state.select(None);
-                app_lock.admin.viewing_clients = 0;
-                app_lock.admin.query_clients = String::from("SELECT * FROM clients");
-                for value in app_lock.admin.applied_filters.values_mut() {
-                    *value = None;
+                match app_lock.admin.active_sidescreen {
+                    SideScreen::AdminClientTable => {
+                        app_lock.admin.action_list_state.select(None);
+                        app_lock.admin.client_table_state.select(None);
+                        app_lock.admin.viewing_clients = 0;
+                        app_lock.admin.query_clients = String::from("SELECT * FROM clients");
+                        for value in app_lock.admin.applied_filters.values_mut() {
+                            *value = None;
+                        }
+                    }
+                    SideScreen::AdminClientEdit => {
+                        app_lock.admin.active_sidescreen = SideScreen::AdminClientTable
+                    }
                 }
             }
             _ => {}

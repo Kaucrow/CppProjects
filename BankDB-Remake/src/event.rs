@@ -15,7 +15,7 @@ use anyhow::Result;
 use crate::model::{
     common::{
         Popup, Screen, TimeoutType, ListType, TableType, InputMode,
-        ScreenSection, ScreenSectionType, CltData
+        ScreenSection, ScreenSectionType, CltData, SideScreen
     },
     admin::CltDataType,
     app::App,
@@ -57,6 +57,7 @@ pub enum Event {
     ApplyFilters,
     CheckAddClient,
     AddClient,
+    SelectClient,
     Resize,
     TimeoutStep(TimeoutType),
 }
@@ -301,16 +302,16 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                         }
                         None => {
                             match key_event.code {
-                                KeyCode::Esc => {
-                                    sender.send(Event::Cleanup).expect(SENDER_ERR);
-                                    sender.send(Event::EnterScreen(Screen::Login))
-                                }
                                 KeyCode::Tab => sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminMain)),
                                 _ => Ok(())
                             }.expect(SENDER_ERR);
                             match app_lock.active_screen_section {
                                 ScreenSection::Left => {
                                     match key_event.code {
+                                        KeyCode::Esc => {
+                                            sender.send(Event::Cleanup).expect(SENDER_ERR);
+                                            sender.send(Event::EnterScreen(Screen::Login))
+                                        }
                                         KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::AdminAction)),
                                         KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::AdminAction)),
                                         KeyCode::Enter => sender.send(Event::SelectAction(ListType::AdminAction)),
@@ -318,11 +319,26 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                     }.expect(SENDER_ERR);
                                 }
                                 ScreenSection::Right => {
-                                    match key_event.code {
-                                        KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousTableItem(TableType::Clients)),
-                                        KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextTableItem(TableType::Clients)),
-                                        _ => Ok(())
-                                    }.expect(SENDER_ERR);
+                                    match app_lock.admin.active_sidescreen {
+                                        SideScreen::AdminClientTable => 
+                                            match key_event.code {
+                                                KeyCode::Esc => {
+                                                    sender.send(Event::Cleanup).expect(SENDER_ERR);
+                                                    sender.send(Event::EnterScreen(Screen::Login))
+                                                }
+                                                KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousTableItem(TableType::Clients)),
+                                                KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextTableItem(TableType::Clients)),
+                                                KeyCode::Enter => sender.send(Event::SelectClient),
+                                                _ => Ok(())
+                                            }
+                                        
+                                        SideScreen::AdminClientEdit => {
+                                            match key_event.code {
+                                                KeyCode::Esc => sender.send(Event::Cleanup),
+                                                _ => Ok(())
+                                            }
+                                        }
+                                    }.expect(SENDER_ERR)
                                 },
                                 _ => {}
                             }

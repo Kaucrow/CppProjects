@@ -13,8 +13,22 @@ use update::update;
 use event::EventHandler;
 use tui::Tui;
 use std::sync::{Arc, Mutex};
+use lazy_static::lazy_static;
 
 const HELP_TEXT: HelpText = HelpText::default();
+
+lazy_static! {
+    static ref DATA_PATH: Mutex<String> = Mutex::new({
+            let mut path = String::from(std::env::current_exe().unwrap().to_string_lossy());
+            path = path[..=path.find("BankDB-Remake").expect("could not find `BankDB-Remake` folder") + ("BankDB-Remake").len()].to_string();
+            if cfg!(windows){
+                path.push_str("data\\");
+            } else {
+                path.push_str("data/");
+            }
+            path
+        });
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {

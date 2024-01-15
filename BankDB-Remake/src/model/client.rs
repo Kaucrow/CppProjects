@@ -13,9 +13,9 @@ use sqlx::{
     Decode,
     Type,
 };
-use crate::model::common::Popup;
+use crate::model::common::{Popup, CltData};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum AccountType {
     Debit,
     Current,
@@ -47,12 +47,14 @@ impl Type<Postgres> for AccountType {
     }
 }
 
+#[derive(Clone)]
 #[cfg_attr(feature = "debug_derive", derive(Debug))]
 pub struct Transfer {
     pub amount: Decimal,
     pub recipient: String,
 }
 
+#[derive(Clone)]
 #[cfg_attr(feature = "debug_derive", derive(Debug))]
 pub enum Transaction {
     Deposit(Decimal),
@@ -82,31 +84,32 @@ impl<'r> FromRow<'r, PgRow> for Transaction {
     }
 }
 
+#[derive(Clone)]
 #[cfg_attr(feature = "debug_derive", derive(Debug))]
 pub struct Client {
-    pub account_number: i32,
-    pub username: String,
-    pub password_hash: String,
     pub name: String,
+    pub username: String,
     pub ci: i32,
-    pub account_type: AccountType,
+    pub account_number: i32,
     pub balance: Decimal,
+    pub account_type: AccountType,
     pub last_transaction: Option<Transaction>,
     pub suspended: bool,
+    pub password_hash: String,
 }
 
 impl Client {
-    pub fn new() -> Self {
-        Client {
-            account_number: 0,
-            username: String::new(),
-            password_hash: String::new(),
-            name: String::new(),
-            ci: 0,
-            account_type: AccountType::Current,
-            balance: Decimal::new(0, 2),
-            last_transaction: None,
-            suspended: false,
+    pub fn iter(&self) -> ClientIterator {
+        ClientIterator {
+            client: self,
+            index: 0,
+        }
+    }
+
+    pub fn skip(&self, skip: usize) -> ClientIterator {
+        ClientIterator {
+            client: self,
+            index: skip,
         }
     }
 
@@ -128,6 +131,38 @@ impl Client {
             }
         }
         Ok(())
+    }
+}
+
+pub struct ClientIterator<'a> {
+    client: &'a Client,
+    index: usize,
+}
+
+impl<'a> Iterator for ClientIterator<'a> {
+    type Item = String;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.index += 1;
+        match self.index - 1 {
+            0 => Some(self.client.name.clone()),
+            1 => Some(self.client.username.clone()),
+            2 => Some(self.client.ci.to_string()),
+            3 => Some(self.client.account_number.to_string()),
+            4 => Some(self.client.balance.to_string()),
+            5 => {
+                match self.client.account_type {
+                    AccountType::Current => Some("current".to_string()),
+                    AccountType::Debit => Some("debit".to_string()),
+                }
+            }
+            6 => Some("none".to_string()),
+            7 => {
+                if self.client.suspended { Some("suspended".to_string()) }
+                else { Some( "not suspended".to_string()) }
+            }
+            _ => None
+        }
     }
 }
 

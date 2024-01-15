@@ -1,11 +1,12 @@
-use std::collections::HashMap;
+use std::{fs, collections::HashMap};
 use anyhow::Result;
 use sqlx::{FromRow, PgPool};
 use ratatui::widgets::{ListState, TableState};
 use crate::model::{
-    common::{Popup, CltData, Button, ScreenSection},
+    common::{Popup, SideScreen, CltData, Button, ScreenSection},
     client::Client,
 };
+use crate::DATA_PATH;
 
 pub struct AdminData {
     pub actions: Vec<&'static str>,
@@ -23,6 +24,9 @@ pub struct AdminData {
     pub active_cltdata: Option<CltData>,
     pub applied_filters: HashMap<CltData, Option<String>>,
     pub registered_cltdata: HashMap<CltData, Option<String>>,
+    pub active_sidescreen: SideScreen,
+    pub user_logo: String,
+    pub client_edit_fields: Vec<&'static str>
 }
 
 impl std::default::Default for AdminData {
@@ -82,6 +86,17 @@ impl std::default::Default for AdminData {
                 (CltData::AccStatus, None),
                 (CltData::PsswdHash, None),
             ]),
+            active_sidescreen: SideScreen::AdminClientTable,
+            user_logo: fs::read_to_string(format!("{}user_logo.txt", DATA_PATH.lock().unwrap())).unwrap(),
+            client_edit_fields: vec![
+                "Username: ",
+                "C.I.: ",
+                "Account num.: ",
+                "Balance: ",
+                "Account type: ",
+                "Last transaction: ",
+                "Account status: ",
+            ]
         }
     }
 }
