@@ -8,14 +8,14 @@ use ratatui::{
 use std::sync::{Arc, Mutex};
 use crate::{
     model::{
-        common::{Popup, CltField, ScreenSection, Button, SideScreen},
+        common::{Popup, ScreenSection, Button, SideScreen},
+        admin::CltField,
         app::App
     },
     ui::common_fn::{
         centered_rect,
         percent_x,
         percent_y,
-        clear_chunks
     }
 };
 

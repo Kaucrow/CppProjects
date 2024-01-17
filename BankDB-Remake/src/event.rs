@@ -14,10 +14,10 @@ use std::{
 use anyhow::Result;
 use crate::model::{
     common::{
-        Popup, Screen, TimeoutType, ListType, TableType, InputMode,
-        ScreenSection, ScreenSectionType, CltField, SideScreen
+        Popup, Screen, TimeoutType, ListType, TableType,
+        InputMode, ScreenSection, ScreenSectionType, SideScreen
     },
-    admin::CltFieldType,
+    admin::{ CltField, CltFieldType},
     app::App,
 };
 

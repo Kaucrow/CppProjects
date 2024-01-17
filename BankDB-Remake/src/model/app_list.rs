@@ -1,11 +1,10 @@
 use anyhow::Result;
 use sqlx::PgPool;
-use crate::model::{
-    common::{ListItemTrait, CltField, Popup, Button, ListType, TableType},
+use super::{
+    common::{ListItems, Popup, Button, ListType, TableType},
+    admin::{CltField, GetClientsType, ModifiedTable},
     app::App,
 };
-
-use super::admin::{ModifiedTable, GetClientsType};
 
 impl App {
     pub async fn next_table_item(&mut self, table_type: TableType, pool: &PgPool) -> Result<()> {
@@ -69,7 +68,7 @@ impl App {
     }
 
     pub fn next_list_item(&mut self, list_type: ListType) {
-        let (list_state, items): (_, &dyn ListItemTrait) = match list_type {
+        let (list_state, items): (_, &dyn ListItems) = match list_type {
             ListType::ClientAction => (&mut self.client.actions_list_state, &self.client.actions),
             ListType::AdminAction => (&mut self.admin.action_list_state, &self.admin.actions),
             ListType::CltField => (&mut self.admin.cltfields_list_state, &self.admin.cltfields),
@@ -94,7 +93,7 @@ impl App {
     }
     
     pub fn previous_list_item(&mut self, list_type: ListType) {
-        let (list_state, items): (_, &dyn ListItemTrait) = match list_type {
+        let (list_state, items): (_, &dyn ListItems) = match list_type {
             ListType::ClientAction => (&mut self.client.actions_list_state, &self.client.actions),
             ListType::AdminAction => (&mut self.admin.action_list_state, &self.admin.actions),
             ListType::CltField => (&mut self.admin.cltfields_list_state, &self.admin.cltfields),

@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use ratatui::widgets::ListState;
 use anyhow::Result;
 use sqlx::postgres::PgTypeInfo;
@@ -13,7 +12,95 @@ use sqlx::{
     Decode,
     Type,
 };
-use crate::model::common::{Popup, CltField};
+use super::common::Popup;
+
+#[derive(Clone)]
+#[cfg_attr(feature = "debug_derive", derive(Debug))]
+pub struct Client {
+    pub name: String,
+    pub username: String,
+    pub ci: i32,
+    pub account_number: i32,
+    pub balance: Decimal,
+    pub account_type: AccountType,
+    pub last_transaction: Option<Transaction>,
+    pub suspended: bool,
+    pub password_hash: String,
+}
+
+impl Client {
+    pub fn iter(&self) -> ClientIterator {
+        ClientIterator {
+            client: self,
+            index: 0,
+        }
+    }
+
+    pub fn skip(&self, skip: usize) -> ClientIterator {
+        ClientIterator {
+            client: self,
+            index: skip,
+        }
+    }
+
+    pub async fn update_transaction(&mut self, pool: &PgPool) -> Result<()> {
+        let client_row = sqlx::query("SELECT * FROM clients WHERE username = $1")
+            .bind(&self.username)
+            .fetch_optional(pool)
+            .await?;
+
+        if let Some(row) = client_row {
+            let last_transaction: Option<String> = row.try_get("last_transaction")?;
+            if last_transaction.is_some() {
+                let transaction_row = sqlx::query("SELECT * FROM transactions WHERE username = $1")
+                .bind(&self.username)
+                .fetch_one(pool)
+                .await?;
+            
+                self.last_transaction = Some(Transaction::from_row(&transaction_row)?);
+            }
+        }
+        Ok(())
+    }
+}
+
+impl<'r> FromRow<'r, PgRow> for Client {
+    fn from_row(row: &'r PgRow) -> Result<Self, sqlx::Error> {
+        Ok(Client {
+            account_number: row.try_get("account_number")?,
+            username: row.try_get("username")?,
+            password_hash: row.try_get("password")?,
+            name: row.try_get("name")?,
+            ci: row.try_get("ci")?,
+            balance: row.try_get("balance")?,
+            account_type: row.try_get("account_type")?,
+            last_transaction: None,
+            suspended: row.try_get("suspended")?,
+        })
+    }
+}
+
+pub struct ClientData {
+    pub active: Option<Client>,
+    pub actions: Vec<Popup>,
+    pub actions_list_state: ListState,
+}
+
+impl std::default::Default for ClientData {
+    fn default() -> Self {
+        ClientData {
+            active: None,
+            actions: vec![
+                Popup::ViewInfo,
+                Popup::Deposit,
+                Popup::Withdraw,
+                Popup::Transfer,
+                Popup::ChangePsswd
+            ],
+            actions_list_state: ListState::default(),
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum AccountType {
@@ -84,56 +171,6 @@ impl<'r> FromRow<'r, PgRow> for Transaction {
     }
 }
 
-#[derive(Clone)]
-#[cfg_attr(feature = "debug_derive", derive(Debug))]
-pub struct Client {
-    pub name: String,
-    pub username: String,
-    pub ci: i32,
-    pub account_number: i32,
-    pub balance: Decimal,
-    pub account_type: AccountType,
-    pub last_transaction: Option<Transaction>,
-    pub suspended: bool,
-    pub password_hash: String,
-}
-
-impl Client {
-    pub fn iter(&self) -> ClientIterator {
-        ClientIterator {
-            client: self,
-            index: 0,
-        }
-    }
-
-    pub fn skip(&self, skip: usize) -> ClientIterator {
-        ClientIterator {
-            client: self,
-            index: skip,
-        }
-    }
-
-    pub async fn update_transaction(&mut self, pool: &PgPool) -> Result<()> {
-        let client_row = sqlx::query("SELECT * FROM clients WHERE username = $1")
-            .bind(&self.username)
-            .fetch_optional(pool)
-            .await?;
-
-        if let Some(row) = client_row {
-            let last_transaction: Option<String> = row.try_get("last_transaction")?;
-            if last_transaction.is_some() {
-                let transaction_row = sqlx::query("SELECT * FROM transactions WHERE username = $1")
-                .bind(&self.username)
-                .fetch_one(pool)
-                .await?;
-            
-                self.last_transaction = Some(Transaction::from_row(&transaction_row)?);
-            }
-        }
-        Ok(())
-    }
-}
-
 pub struct ClientIterator<'a> {
     client: &'a Client,
     index: usize,
@@ -162,44 +199,6 @@ impl<'a> Iterator for ClientIterator<'a> {
                 else { Some( "not suspended".to_string()) }
             }
             _ => None
-        }
-    }
-}
-
-impl<'r> FromRow<'r, PgRow> for Client {
-    fn from_row(row: &'r PgRow) -> Result<Self, sqlx::Error> {
-        Ok(Client {
-            account_number: row.try_get("account_number")?,
-            username: row.try_get("username")?,
-            password_hash: row.try_get("password")?,
-            name: row.try_get("name")?,
-            ci: row.try_get("ci")?,
-            balance: row.try_get("balance")?,
-            account_type: row.try_get("account_type")?,
-            last_transaction: None,
-            suspended: row.try_get("suspended")?,
-        })
-    }
-}
-
-pub struct ClientData {
-    pub active: Option<Client>,
-    pub actions: Vec<Popup>,
-    pub actions_list_state: ListState,
-}
-
-impl std::default::Default for ClientData {
-    fn default() -> Self {
-        ClientData {
-            active: None,
-            actions: vec![
-                Popup::ViewInfo,
-                Popup::Deposit,
-                Popup::Withdraw,
-                Popup::Transfer,
-                Popup::ChangePsswd
-            ],
-            actions_list_state: ListState::default(),
         }
     }
 }

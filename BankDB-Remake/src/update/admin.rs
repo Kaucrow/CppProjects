@@ -6,8 +6,9 @@ use bcrypt::hash;
 use crate::{
     event::Event,
     model::{
-        common::{Popup, InputMode, CltField, Button, SideScreen},
-        app::App, admin::CltFieldType,
+        common::{Popup, InputMode, Button, SideScreen},
+        admin::{CltField, CltFieldType},
+        app::App,
     }, HELP_TEXT,
 };
 

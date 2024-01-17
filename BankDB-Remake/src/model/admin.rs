@@ -2,11 +2,13 @@ use std::{fs, collections::HashMap};
 use anyhow::Result;
 use sqlx::{FromRow, PgPool};
 use ratatui::widgets::{ListState, TableState};
-use crate::model::{
-    common::{Popup, SideScreen, CltField, Button, ScreenSection},
-    client::Client,
+use crate::{
+    DATA_PATH,
+    model::{
+        common::{Popup, SideScreen, Button, ScreenSection, ListItems},
+        client::Client,
+    }
 };
-use crate::DATA_PATH;
 
 pub struct AdminData {
     pub actions: Vec<Popup>,
@@ -85,22 +87,6 @@ impl std::default::Default for AdminData {
     }
 }
 
-pub enum ModifiedTable {
-    Yes,
-    No
-}
-
-pub enum GetClientsType {
-    Next,
-    Previous
-}
-
-#[derive(Debug, PartialEq)]
-pub enum CltFieldType {
-    CltField,
-    Filter
-}
-
 impl AdminData {
     pub async fn get_clients(&mut self, pool: &PgPool, get_type: GetClientsType) -> Result<ModifiedTable> {
         match get_type {
@@ -140,4 +126,66 @@ impl AdminData {
 
         Ok(ModifiedTable::No)
     }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
+pub enum CltField {
+    Username,
+    Name,
+    Ci,
+    AccNum,
+    Balance,
+    AccType,
+    AccStatus,
+    PsswdHash,
+}
+
+impl ListItems for Vec<CltField> {
+    fn len(&self) -> usize {
+        Vec::len(self)
+    }
+}
+
+impl CltField {
+    pub fn to_list_string(&self) -> &str {
+        match self {
+            CltField::Username => "Username",
+            CltField::Name => "Name",
+            CltField::Ci => "C.I.",
+            CltField::AccNum => "Account number",
+            CltField::Balance => "Balance",
+            CltField::AccType => "Account type",
+            CltField::AccStatus => "Account status",
+            CltField::PsswdHash => "Password",
+        }
+    }
+
+    pub fn as_sql_col(&self) -> String {
+        match self {
+            Self::Username => String::from("username"),
+            Self::Name => String::from("name"),
+            Self::Ci => String::from("ci"),
+            Self::AccNum => String::from("account_number"),
+            Self::Balance => String::from("balance"),
+            Self::AccType => String::from("account_type"),
+            Self::AccStatus => String::from("suspended"),
+            Self::PsswdHash => String::from("password")
+        }
+    }
+}
+
+pub enum ModifiedTable {
+    Yes,
+    No
+}
+
+pub enum GetClientsType {
+    Next,
+    Previous
+}
+
+#[derive(Debug, PartialEq)]
+pub enum CltFieldType {
+    CltField,
+    Filter
 }
