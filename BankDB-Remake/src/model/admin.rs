@@ -15,9 +15,7 @@ pub struct AdminData {
     pub stored_clients: Vec<Client>,
     pub viewing_clients: i32,
     pub query_clients: String,
-    pub popups: HashMap<usize, Popup>,
     pub cltdata: Vec<CltData>,
-    //pub cltdata_sidescreens: HashMap<usize, CltData>,
     pub cltdata_list_state: ListState,
     pub popup_screen_section: ScreenSection,
     pub button_selection: Option<Button>,
@@ -41,10 +39,6 @@ impl std::default::Default for AdminData {
             stored_clients: Vec::new(),
             viewing_clients: 0,
             query_clients: String::from("SELECT * FROM clients"),
-            popups: HashMap::from([
-                (0, Popup::FilterClients),
-                (1, Popup::AddClient)
-            ]),
             cltdata: vec![
                 CltData::Username,
                 CltData::Name,
