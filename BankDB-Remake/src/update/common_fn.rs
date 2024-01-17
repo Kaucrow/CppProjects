@@ -30,7 +30,6 @@ pub async fn modify_balance(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, ev
         .execute(pool)
         .await?;
 
-    app_lock.input.0.reset();
     app_lock.active_popup = None;
     Ok(())
 }

@@ -14,6 +14,7 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
     match event {
         Event::Deposit | Event::Withdraw => {
             modify_balance(app, pool, event).await?;
+            app.lock().unwrap().input.0.reset();
             Ok(())
         },
         Event::Transfer => {
