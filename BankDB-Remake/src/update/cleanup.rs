@@ -27,8 +27,8 @@ pub fn cleanup(app: &mut Arc<Mutex<App>>) -> Result<()> {
                 app_lock.input.1.reset();
             }
             Popup::FilterClients | Popup::AddClient => {
-                app_lock.admin.cltdata_list_state.select(None);
-                app_lock.admin.active_cltdata = None;
+                app_lock.admin.cltfields_list_state.select(None);
+                app_lock.admin.active_cltfield = None;
                 app_lock.input.0.reset();
                 app_lock.input.1.reset();
                 if let Popup::AddClient = popup {
@@ -41,7 +41,7 @@ pub fn cleanup(app: &mut Arc<Mutex<App>>) -> Result<()> {
                         None =>
                             if app_lock.hold_popup { return Ok(()); }
                             else {
-                                app_lock.admin.registered_cltdata.values_mut().for_each(|value| *value = None);
+                                app_lock.admin.registered_cltfields.values_mut().for_each(|value| *value = None);
                             },
                         _ =>
                             panic!("popup {:?} can't switch to {:?}", popup, app_lock.switch_popup)
@@ -51,7 +51,7 @@ pub fn cleanup(app: &mut Arc<Mutex<App>>) -> Result<()> {
             }
             Popup::AddClientPsswd => {
                 app_lock.input.0.reset();
-                app_lock.admin.registered_cltdata.values_mut().for_each(|value| *value = None);
+                app_lock.admin.registered_cltfields.values_mut().for_each(|value| *value = None);
                 app_lock.active_popup = Some(Popup::AddClientSuccess);
                 return Ok(());
             }
@@ -66,7 +66,7 @@ pub fn cleanup(app: &mut Arc<Mutex<App>>) -> Result<()> {
                 match app_lock.admin.active_sidescreen {
                     SideScreen::AdminClientTable => {
                         app_lock.admin.action_list_state.select(None);
-                        app_lock.admin.client_table_state.select(None);
+                        app_lock.admin.clients_table_state.select(None);
                         app_lock.admin.viewing_clients = 0;
                         app_lock.admin.query_clients = String::from("SELECT * FROM clients");
                         for value in app_lock.admin.applied_filters.values_mut() {

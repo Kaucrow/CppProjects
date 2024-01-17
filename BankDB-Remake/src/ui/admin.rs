@@ -8,7 +8,7 @@ use ratatui::{
 use std::sync::{Arc, Mutex};
 use crate::{
     model::{
-        common::{Popup, CltData, ScreenSection, Button, SideScreen},
+        common::{Popup, CltField, ScreenSection, Button, SideScreen},
         app::App
     },
     ui::common_fn::{
@@ -124,7 +124,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                 .highlight_style(Style::default().fg(Color::Green).add_modifier(Modifier::REVERSED));
                 //.block(Block::default().borders(Borders::ALL));
     
-            f.render_stateful_widget(client_table, client_table_chunks[1], &mut app_lock.admin.client_table_state);
+            f.render_stateful_widget(client_table, client_table_chunks[1], &mut app_lock.admin.clients_table_state);
         }
         SideScreen::AdminClientEdit => {
             let client_edit_chunks = Layout::default()
@@ -220,19 +220,19 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                 .border_type(BorderType::Rounded)
                 .style(Style::default().fg(right_fg_color));
 
-            let filters_text: Vec<String> = app_lock.admin.cltdata.iter().map(|cltdata| cltdata.to_list_string().to_string()).collect();
+            let filters_text: Vec<String> = app_lock.admin.cltfields.iter().map(|cltfield| cltfield.to_list_string().to_string()).collect();
 
             let filters = List::new(filters_text)
                 .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
                 .block(filters_block);
 
-            f.render_stateful_widget(filters, popup_chunks[0], &mut app_lock.admin.cltdata_list_state);
+            f.render_stateful_widget(filters, popup_chunks[0], &mut app_lock.admin.cltfields_list_state);
             f.render_widget(input_block, popup_chunks[1]);
 
-            match app_lock.admin.active_cltdata {
-                Some(CltData::Username) | Some(CltData::Name) |
-                Some(CltData::Ci) | Some(CltData::AccNum) |
-                Some(CltData::Balance) => {
+            match app_lock.admin.active_cltfield {
+                Some(CltField::Username) | Some(CltField::Name) |
+                Some(CltField::Ci) | Some(CltField::AccNum) |
+                Some(CltField::Balance) => {
                     let input_chunks = Layout::default()
                         .direction(Direction::Vertical)
                         .constraints([
@@ -257,7 +257,7 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                                  input_chunks[1].y + 1,
                                 );
                 }
-                Some(CltData::AccType) | Some(CltData::AccStatus) => {
+                Some(CltField::AccType) | Some(CltField::AccStatus) => {
                     let options_chunks = Layout::default()
                         .direction(Direction::Vertical)
                         .constraints([
@@ -287,9 +287,9 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                         _ => panic!()
                     };
 
-                    let (option1_text, option2_text) = match app_lock.admin.active_cltdata {
-                        Some(CltData::AccType) => ("Current", "Debit"),
-                        Some(CltData::AccStatus) => ("Suspended", "Not suspended"),
+                    let (option1_text, option2_text) = match app_lock.admin.active_cltfield {
+                        Some(CltField::AccType) => ("Current", "Debit"),
+                        Some(CltField::AccStatus) => ("Suspended", "Not suspended"),
                         _ => panic!()
                     };
 

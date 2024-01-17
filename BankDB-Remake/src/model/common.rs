@@ -60,7 +60,7 @@ pub enum Button {
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
-pub enum CltData {
+pub enum CltField {
     Username,
     Name,
     Ci,
@@ -71,23 +71,23 @@ pub enum CltData {
     PsswdHash,
 }
 
-impl ListItemTrait for Vec<CltData> {
+impl ListItemTrait for Vec<CltField> {
     fn len(&self) -> usize {
         Vec::len(self)
     }
 }
 
-impl CltData {
+impl CltField {
     pub fn to_list_string(&self) -> &str {
         match self {
-            CltData::Username => "Username",
-            CltData::Name => "Name",
-            CltData::Ci => "C.I.",
-            CltData::AccNum => "Account number",
-            CltData::Balance => "Balance",
-            CltData::AccType => "Account type",
-            CltData::AccStatus => "Account status",
-            CltData::PsswdHash => "Password",
+            CltField::Username => "Username",
+            CltField::Name => "Name",
+            CltField::Ci => "C.I.",
+            CltField::AccNum => "Account number",
+            CltField::Balance => "Balance",
+            CltField::AccType => "Account type",
+            CltField::AccStatus => "Account status",
+            CltField::PsswdHash => "Password",
         }
     }
 
@@ -121,7 +121,7 @@ pub enum TimeoutType {
 pub enum ListType {
     ClientAction,
     AdminAction,
-    CltData,
+    CltField,
 }
 
 #[derive(Debug)]

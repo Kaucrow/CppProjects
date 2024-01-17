@@ -3,7 +3,7 @@ use anyhow::Result;
 use sqlx::{FromRow, PgPool};
 use ratatui::widgets::{ListState, TableState};
 use crate::model::{
-    common::{Popup, SideScreen, CltData, Button, ScreenSection},
+    common::{Popup, SideScreen, CltField, Button, ScreenSection},
     client::Client,
 };
 use crate::DATA_PATH;
@@ -11,17 +11,17 @@ use crate::DATA_PATH;
 pub struct AdminData {
     pub actions: Vec<Popup>,
     pub action_list_state: ListState,
-    pub client_table_state: TableState,
+    pub clients_table_state: TableState,
     pub stored_clients: Vec<Client>,
     pub viewing_clients: i32,
     pub query_clients: String,
-    pub cltdata: Vec<CltData>,
-    pub cltdata_list_state: ListState,
+    pub cltfields: Vec<CltField>,
+    pub cltfields_list_state: ListState,
     pub popup_screen_section: ScreenSection,
     pub button_selection: Option<Button>,
-    pub active_cltdata: Option<CltData>,
-    pub applied_filters: HashMap<CltData, Option<String>>,
-    pub registered_cltdata: HashMap<CltData, Option<String>>,
+    pub active_cltfield: Option<CltField>,
+    pub applied_filters: HashMap<CltField, Option<String>>,
+    pub registered_cltfields: HashMap<CltField, Option<String>>,
     pub active_sidescreen: SideScreen,
     pub user_logo: String,
     pub client_edit_fields: Vec<&'static str>
@@ -35,40 +35,40 @@ impl std::default::Default for AdminData {
                 Popup::AddClient,
             ],
             action_list_state: ListState::default(),
-            client_table_state: TableState::default(),
+            clients_table_state: TableState::default(),
             stored_clients: Vec::new(),
             viewing_clients: 0,
             query_clients: String::from("SELECT * FROM clients"),
-            cltdata: vec![
-                CltData::Username,
-                CltData::Name,
-                CltData::Ci,
-                CltData::AccNum,
-                CltData::AccType,
-                CltData::AccStatus,
+            cltfields: vec![
+                CltField::Username,
+                CltField::Name,
+                CltField::Ci,
+                CltField::AccNum,
+                CltField::AccType,
+                CltField::AccStatus,
             ],
-            cltdata_list_state: ListState::default(),
+            cltfields_list_state: ListState::default(),
             popup_screen_section: ScreenSection::Left,
             button_selection: None,
-            active_cltdata: None,
+            active_cltfield: None,
             applied_filters: HashMap::from([
-                (CltData::Username, None),
-                (CltData::Name, None),
-                (CltData::Ci, None),
-                (CltData::AccNum, None),
-                (CltData::Balance, None),
-                (CltData::AccType, None),
-                (CltData::AccStatus, None),
+                (CltField::Username, None),
+                (CltField::Name, None),
+                (CltField::Ci, None),
+                (CltField::AccNum, None),
+                (CltField::Balance, None),
+                (CltField::AccType, None),
+                (CltField::AccStatus, None),
             ]),
-            registered_cltdata: HashMap::from([
-                (CltData::Username, None),
-                (CltData::Name, None),
-                (CltData::Ci, None),
-                (CltData::AccNum, None),
-                (CltData::Balance, None),
-                (CltData::AccType, None),
-                (CltData::AccStatus, None),
-                (CltData::PsswdHash, None),
+            registered_cltfields: HashMap::from([
+                (CltField::Username, None),
+                (CltField::Name, None),
+                (CltField::Ci, None),
+                (CltField::AccNum, None),
+                (CltField::Balance, None),
+                (CltField::AccType, None),
+                (CltField::AccStatus, None),
+                (CltField::PsswdHash, None),
             ]),
             active_sidescreen: SideScreen::AdminClientTable,
             user_logo: fs::read_to_string(format!("{}user_logo.txt", DATA_PATH.lock().unwrap())).unwrap(),
@@ -96,8 +96,8 @@ pub enum GetClientsType {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum CltDataType {
-    CltData,
+pub enum CltFieldType {
+    CltField,
     Filter
 }
 

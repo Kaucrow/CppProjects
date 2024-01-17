@@ -19,7 +19,7 @@ impl HelpText {
                 filter_right: "Input the value. `Enter`: Save changes. `Esc`: Quit editing and don't save changes.",
                 add_client_left: "Choose a client data field to add. `r`: Register the client. `Esc`: Go back.",
                 add_client_right: "Input the value. `Enter`: Save changes. `Esc`: Quit editing and don't save changes.",
-                missing_cltdata: "Missing data field for ",
+                missing_cltfield: "Missing data field for ",
             },
             client: ClientHelpText {
                 main: "Choose an action to perform. `Esc`: Go back.",
@@ -62,5 +62,5 @@ pub struct AdminHelpText {
     pub filter_right: &'static str,
     pub add_client_left: &'static str,
     pub add_client_right: &'static str,
-    pub missing_cltdata: &'static str,
+    pub missing_cltfield: &'static str,
 }

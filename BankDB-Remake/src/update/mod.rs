@@ -26,7 +26,7 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
         Event::Deposit | Event::Withdraw | Event::Transfer | Event::ChangePasswd
         => client::update(app, pool, event).await,
 
-        Event::EditCltData | Event::RegisterCltData(_) | Event::ApplyFilters |
+        Event::EditCltField | Event::RegisterCltField(_) | Event::ApplyFilters |
         Event::CheckAddClient | Event::AddClient | Event::SwitchButton |
         Event::SelectClient
         => admin::update(app, pool, event).await,

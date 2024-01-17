@@ -15,9 +15,9 @@ use anyhow::Result;
 use crate::model::{
     common::{
         Popup, Screen, TimeoutType, ListType, TableType, InputMode,
-        ScreenSection, ScreenSectionType, CltData, SideScreen
+        ScreenSection, ScreenSectionType, CltField, SideScreen
     },
-    admin::CltDataType,
+    admin::CltFieldType,
     app::App,
 };
 
@@ -51,9 +51,9 @@ pub enum Event {
     Withdraw,
     Transfer,
     ChangePasswd,
-    EditCltData,
+    EditCltField,
     SwitchButton,
-    RegisterCltData(CltDataType),
+    RegisterCltField(CltFieldType),
     ApplyFilters,
     CheckAddClient,
     AddClient,
@@ -225,14 +225,14 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                         KeyCode::Esc => sender.send(Event::Cleanup),
                                         KeyCode::Enter => {
                                             sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminFilters)).expect(SENDER_ERR);
-                                            sender.send(Event::EditCltData)
+                                            sender.send(Event::EditCltField)
                                         }
                                         KeyCode::Char('a') => {
                                             sender.send(Event::ApplyFilters).expect(SENDER_ERR);
                                             sender.send(Event::Cleanup)
                                         }
-                                        KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::CltData)),
-                                        KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::CltData)),
+                                        KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::CltField)),
+                                        KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::CltField)),
                                         _ => Ok(())
                                     }.expect(SENDER_ERR);
                                 }
@@ -243,12 +243,12 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                         }
                                         KeyCode::Enter => {
                                             sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminFilters)).expect(SENDER_ERR);
-                                            sender.send(Event::RegisterCltData(CltDataType::Filter))
+                                            sender.send(Event::RegisterCltField(CltFieldType::Filter))
                                         }
                                         _ => Ok(())
                                     }.expect(SENDER_ERR);
 
-                                    handle_update_cltdata(&key_event, sender, &app_lock);
+                                    handle_update_cltfield(&key_event, sender, &app_lock);
                                 }
                                 _ => {}
                             }
@@ -258,15 +258,15 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                 ScreenSection::Left => {
                                     match key_event.code {
                                         KeyCode::Esc => sender.send(Event::Cleanup),
-                                        KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::CltData)),
-                                        KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::CltData)),
+                                        KeyCode::Char('k') | KeyCode::Up => sender.send(Event::PreviousListItem(ListType::CltField)),
+                                        KeyCode::Char('j') | KeyCode::Down => sender.send(Event::NextListItem(ListType::CltField)),
                                         KeyCode::Char('r') => {
                                             sender.send(Event::CheckAddClient).expect(SENDER_ERR);
                                             sender.send(Event::Cleanup)
                                         }
                                         KeyCode::Enter => {
                                             sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminFilters)).expect(SENDER_ERR);
-                                            sender.send(Event::EditCltData)
+                                            sender.send(Event::EditCltField)
                                         }
                                         _ => Ok(())
                                     }.expect(SENDER_ERR)
@@ -278,12 +278,12 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
                                         }
                                         KeyCode::Enter => {
                                             sender.send(Event::SwitchScreenSection(ScreenSectionType::AdminAddClient)).expect(SENDER_ERR);
-                                            sender.send(Event::RegisterCltData(CltDataType::CltData))
+                                            sender.send(Event::RegisterCltField(CltFieldType::CltField))
                                         }
                                         _ => Ok(())
                                     }.expect(SENDER_ERR);
 
-                                    handle_update_cltdata(&key_event, sender, &app_lock);
+                                    handle_update_cltfield(&key_event, sender, &app_lock);
                                 }
                                 _ => {}
                             }
@@ -362,21 +362,21 @@ fn event_act(event: CrosstermEvent, sender: &mpsc::Sender<Event>, app: &Arc<Mute
     }
 }
 
-fn handle_update_cltdata(key_event: &KeyEvent, sender: &mpsc::Sender<Event>, app_lock: &MutexGuard<'_, App>) {
-    match app_lock.admin.active_cltdata {
-        Some(CltData::Username) => {
+fn handle_update_cltfield(key_event: &KeyEvent, sender: &mpsc::Sender<Event>, app_lock: &MutexGuard<'_, App>) {
+    match app_lock.admin.active_cltfield {
+        Some(CltField::Username) => {
             sender.send(Event::KeyInput(*key_event, InputBlacklist::NoSpace))
         }
-        Some(CltData::Name) => {
+        Some(CltField::Name) => {
             sender.send(Event::KeyInput(*key_event, InputBlacklist::Alphabetic))
         }
-        Some(CltData::Ci) | Some(CltData::AccNum) => {
+        Some(CltField::Ci) | Some(CltField::AccNum) => {
             sender.send(Event::KeyInput(*key_event, InputBlacklist::Numeric))
         }
-        Some(CltData::Balance) => {
+        Some(CltField::Balance) => {
             sender.send(Event::KeyInput(*key_event, InputBlacklist::Money))
         }
-        Some(CltData::AccStatus) | Some(CltData::AccType) => {
+        Some(CltField::AccStatus) | Some(CltField::AccType) => {
             match key_event.code {
                 KeyCode::Tab => {
                     sender.send(Event::SwitchButton)

@@ -13,7 +13,7 @@ use sqlx::{
     Decode,
     Type,
 };
-use crate::model::common::{Popup, CltData};
+use crate::model::common::{Popup, CltField};
 
 #[derive(Debug, Clone)]
 pub enum AccountType {

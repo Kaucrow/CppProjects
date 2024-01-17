@@ -1,7 +1,7 @@
 use anyhow::Result;
 use sqlx::PgPool;
 use crate::model::{
-    common::{ListItemTrait, CltData, Popup, Button, ListType, TableType},
+    common::{ListItemTrait, CltField, Popup, Button, ListType, TableType},
     app::App,
 };
 
@@ -11,14 +11,14 @@ impl App {
     pub async fn next_table_item(&mut self, table_type: TableType, pool: &PgPool) -> Result<()> {
         let mut modified_table = ModifiedTable::No;
 
-        if let Some(selection) = self.admin.client_table_state.selected() {
+        if let Some(selection) = self.admin.clients_table_state.selected() {
             if selection >= self.admin.stored_clients.len() - 1 {
                 modified_table = self.admin.get_clients(pool, GetClientsType::Next).await?;
             }
         }
 
         let (table_state, items) = match table_type {
-            TableType::Clients => (&mut self.admin.client_table_state, &self.admin.stored_clients),
+            TableType::Clients => (&mut self.admin.clients_table_state, &self.admin.stored_clients),
             _ => panic!()
         };
 
@@ -41,14 +41,14 @@ impl App {
     pub async fn previous_table_item(&mut self, table_type: TableType, pool: &PgPool) -> Result<()> {
         let mut modified_table = ModifiedTable::No;
 
-        if let Some(selection) = self.admin.client_table_state.selected() {
+        if let Some(selection) = self.admin.clients_table_state.selected() {
             if selection == 0 {
                 modified_table = self.admin.get_clients(pool, GetClientsType::Previous).await?;
             }
         }
 
         let (table_state, items) = match table_type {
-            TableType::Clients => (&mut self.admin.client_table_state, &self.admin.stored_clients),
+            TableType::Clients => (&mut self.admin.clients_table_state, &self.admin.stored_clients),
             _ => panic!()
         };
 
@@ -72,7 +72,7 @@ impl App {
         let (list_state, items): (_, &dyn ListItemTrait) = match list_type {
             ListType::ClientAction => (&mut self.client.actions_list_state, &self.client.actions),
             ListType::AdminAction => (&mut self.admin.action_list_state, &self.admin.actions),
-            ListType::CltData => (&mut self.admin.cltdata_list_state, &self.admin.cltdata),
+            ListType::CltField => (&mut self.admin.cltfields_list_state, &self.admin.cltfields),
             _ => panic!()
         };
 
@@ -88,8 +88,8 @@ impl App {
         };
         list_state.select(Some(i));
 
-        if let ListType::CltData = list_type {
-            self.update_cltdata_data(i);
+        if let ListType::CltField = list_type {
+            self.update_cltfield_data(i);
         }
     }
     
@@ -97,7 +97,7 @@ impl App {
         let (list_state, items): (_, &dyn ListItemTrait) = match list_type {
             ListType::ClientAction => (&mut self.client.actions_list_state, &self.client.actions),
             ListType::AdminAction => (&mut self.admin.action_list_state, &self.admin.actions),
-            ListType::CltData => (&mut self.admin.cltdata_list_state, &self.admin.cltdata),
+            ListType::CltField => (&mut self.admin.cltfields_list_state, &self.admin.cltfields),
             _ => panic!()
         };
 
@@ -113,30 +113,30 @@ impl App {
         };
         list_state.select(Some(i));
         
-        if let ListType::CltData = list_type {
-            self.update_cltdata_data(i);
+        if let ListType::CltField = list_type {
+            self.update_cltfield_data(i);
         }
     }
 
-    fn update_cltdata_data(&mut self, list_selection: usize) {
-        let cltdata = *self.admin.cltdata.get(list_selection)
+    fn update_cltfield_data(&mut self, list_selection: usize) {
+        let cltfield = *self.admin.cltfields.get(list_selection)
             .unwrap_or_else(|| panic!("sidescreen not found in filter sidescreens"));
 
-        self.admin.active_cltdata = Some(cltdata);
+        self.admin.active_cltfield = Some(cltfield);
 
-        let registered_cltdata = match self.active_popup {
+        let registered_cltfield = match self.active_popup {
             Some(Popup::FilterClients) => &self.admin.applied_filters,
-            Some(Popup::AddClient) => &self.admin.registered_cltdata,
-            _ => panic!("fn update_cltdata_data was called on a popup of type {:?}", self.active_popup)
+            Some(Popup::AddClient) => &self.admin.registered_cltfields,
+            _ => panic!("fn update_cltfield_data was called on a popup of type {:?}", self.active_popup)
         };
         
-        if let Some(value) = registered_cltdata.get(&cltdata).unwrap() {
-            match cltdata {
-                CltData::Username | CltData::Name | CltData::Ci |
-                CltData::Balance | CltData::AccNum
+        if let Some(value) = registered_cltfield.get(&cltfield).unwrap() {
+            match cltfield {
+                CltField::Username | CltField::Name | CltField::Ci |
+                CltField::Balance | CltField::AccNum
                 => self.input.0 = value.clone().into(),
 
-                CltData::AccStatus => {
+                CltField::AccStatus => {
                     if value == "suspended" {
                         self.admin.button_selection = Some(Button::Up)
                     } else {
@@ -144,7 +144,7 @@ impl App {
                     }
                 },
 
-                CltData::AccType => {
+                CltField::AccType => {
                     if value == "current" {
                         self.admin.button_selection = Some(Button::Up)
                     } else {
@@ -155,12 +155,12 @@ impl App {
                 _ => {}
             }
         } else {
-            match cltdata {
-                CltData::Username | CltData::Name | CltData::Ci |
-                CltData::Balance | CltData::AccNum
+            match cltfield {
+                CltField::Username | CltField::Name | CltField::Ci |
+                CltField::Balance | CltField::AccNum
                 => self.input.0.reset(),
 
-                CltData::AccStatus | CltData::AccType
+                CltField::AccStatus | CltField::AccType
                 => self.admin.button_selection = None,
                 
                 _ => {}
