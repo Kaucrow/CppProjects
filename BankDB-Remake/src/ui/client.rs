@@ -69,10 +69,12 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
             Constraint::Percentage(5)
         ])
         .split(chunks[1]);
-
-    let actions = List::new(app_lock.client.actions.clone()).highlight_style(Style::default().add_modifier(Modifier::REVERSED));
     
-    f.render_stateful_widget(actions, list_chunks[1], &mut app_lock.client.action_list_state);
+    let actions_text: Vec<String> = app_lock.client.actions.iter().map(|action| action.to_list_string().to_string()).collect();
+
+    let actions = List::new(actions_text).highlight_style(Style::default().add_modifier(Modifier::REVERSED));
+    
+    f.render_stateful_widget(actions, list_chunks[1], &mut app_lock.client.actions_list_state);
 
     let help_text = Paragraph::new(Text::from(
         format!("{}", app_lock.help_text)

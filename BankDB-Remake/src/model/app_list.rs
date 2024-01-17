@@ -1,7 +1,7 @@
 use anyhow::Result;
 use sqlx::PgPool;
 use crate::model::{
-    common::{CltData, Popup, Button, ListType, TableType},
+    common::{ListItemTrait, CltData, Popup, Button, ListType, TableType},
     app::App,
 };
 
@@ -69,8 +69,8 @@ impl App {
     }
 
     pub fn next_list_item(&mut self, list_type: ListType) {
-        let (list_state, items) = match list_type {
-            ListType::ClientAction => (&mut self.client.action_list_state, &self.client.actions),
+        let (list_state, items): (_, &dyn ListItemTrait) = match list_type {
+            ListType::ClientAction => (&mut self.client.actions_list_state, &self.client.actions),
             ListType::AdminAction => (&mut self.admin.action_list_state, &self.admin.actions),
             ListType::CltData => (&mut self.admin.cltdata_list_state, &self.admin.cltdata),
             _ => panic!()
@@ -94,8 +94,8 @@ impl App {
     }
     
     pub fn previous_list_item(&mut self, list_type: ListType) {
-        let (list_state, items) = match list_type {
-            ListType::ClientAction => (&mut self.client.action_list_state, &self.client.actions),
+        let (list_state, items): (_, &dyn ListItemTrait) = match list_type {
+            ListType::ClientAction => (&mut self.client.actions_list_state, &self.client.actions),
             ListType::AdminAction => (&mut self.admin.action_list_state, &self.admin.actions),
             ListType::CltData => (&mut self.admin.cltdata_list_state, &self.admin.cltdata),
             _ => panic!()
@@ -119,7 +119,7 @@ impl App {
     }
 
     fn update_cltdata_data(&mut self, list_selection: usize) {
-        let cltdata = *self.admin.cltdata_sidescreens.get(&list_selection)
+        let cltdata = *self.admin.cltdata.get(list_selection)
             .unwrap_or_else(|| panic!("sidescreen not found in filter sidescreens"));
 
         self.admin.active_cltdata = Some(cltdata);

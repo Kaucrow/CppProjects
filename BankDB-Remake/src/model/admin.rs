@@ -9,15 +9,15 @@ use crate::model::{
 use crate::DATA_PATH;
 
 pub struct AdminData {
-    pub actions: Vec<&'static str>,
+    pub actions: Vec<Popup>,
     pub action_list_state: ListState,
     pub client_table_state: TableState,
     pub stored_clients: Vec<Client>,
     pub viewing_clients: i32,
     pub query_clients: String,
     pub popups: HashMap<usize, Popup>,
-    pub cltdata: Vec<&'static str>,
-    pub cltdata_sidescreens: HashMap<usize, CltData>,
+    pub cltdata: Vec<CltData>,
+    //pub cltdata_sidescreens: HashMap<usize, CltData>,
     pub cltdata_list_state: ListState,
     pub popup_screen_section: ScreenSection,
     pub button_selection: Option<Button>,
@@ -33,8 +33,8 @@ impl std::default::Default for AdminData {
     fn default() -> Self {
         AdminData {
             actions: vec![
-                "Filter clients",
-                "Add a client"
+                Popup::FilterClients,
+                Popup::AddClient,
             ],
             action_list_state: ListState::default(),
             client_table_state: TableState::default(),
@@ -46,23 +46,13 @@ impl std::default::Default for AdminData {
                 (1, Popup::AddClient)
             ]),
             cltdata: vec![
-                "Username",
-                "Name",
-                "C.I.",
-                "Account number",
-                "Balance",
-                "Account type",
-                "Account status",
+                CltData::Username,
+                CltData::Name,
+                CltData::Ci,
+                CltData::AccNum,
+                CltData::AccType,
+                CltData::AccStatus,
             ],
-            cltdata_sidescreens: HashMap::from([
-                (0, CltData::Username),
-                (1, CltData::Name),
-                (2, CltData::Ci),
-                (3, CltData::AccNum),
-                (4, CltData::Balance),
-                (5, CltData::AccType),
-                (6, CltData::AccStatus),
-            ]),
             cltdata_list_state: ListState::default(),
             popup_screen_section: ScreenSection::Left,
             button_selection: None,

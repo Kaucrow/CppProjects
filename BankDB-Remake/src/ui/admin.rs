@@ -74,7 +74,9 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
     f.render_widget(Block::default().borders(Borders::ALL).style(Style::default().fg(left_fg_color)), main_chunks[0]);
     f.render_widget(admin_title, left_chunks[0]);
     
-    let actions = List::new(app_lock.admin.actions.clone())
+    let actions_text: Vec<String> = app_lock.admin.actions.iter().map(|action| action.to_list_string().to_string()).collect();
+
+    let actions = List::new(actions_text)
         .highlight_style(Style::default().add_modifier(Modifier::REVERSED));
 
     f.render_stateful_widget(actions, left_chunks[1], &mut app_lock.admin.action_list_state);
@@ -217,8 +219,10 @@ pub fn render(app: &mut Arc<Mutex<App>>, f: &mut Frame) {
                 .borders(Borders::ALL)
                 .border_type(BorderType::Rounded)
                 .style(Style::default().fg(right_fg_color));
-            
-            let filters = List::new(app_lock.admin.cltdata.clone())
+
+            let filters_text: Vec<String> = app_lock.admin.cltdata.iter().map(|cltdata| cltdata.to_list_string().to_string()).collect();
+
+            let filters = List::new(filters_text)
                 .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
                 .block(filters_block);
 

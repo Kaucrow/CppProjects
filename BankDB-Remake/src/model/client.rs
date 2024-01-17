@@ -184,9 +184,8 @@ impl<'r> FromRow<'r, PgRow> for Client {
 
 pub struct ClientData {
     pub active: Option<Client>,
-    pub actions: Vec<&'static str>,
-    pub action_list_state: ListState,
-    pub popups: HashMap<usize, Popup>,
+    pub actions: Vec<Popup>,
+    pub actions_list_state: ListState,
 }
 
 impl std::default::Default for ClientData {
@@ -194,20 +193,13 @@ impl std::default::Default for ClientData {
         ClientData {
             active: None,
             actions: vec![
-                "View info",
-                "Make a deposit",
-                "Make a withdrawal",
-                "Make a transfer",
-                "Change password"
+                Popup::ViewInfo,
+                Popup::Deposit,
+                Popup::Withdraw,
+                Popup::Transfer,
+                Popup::ChangePsswd
             ],
-            action_list_state: ListState::default(),
-            popups: HashMap::from([
-                (0, Popup::ViewInfo),
-                (1, Popup::Deposit),
-                (2, Popup::Withdraw),
-                (3, Popup::Transfer),
-                (4, Popup::ChangePsswd)
-            ])
+            actions_list_state: ListState::default(),
         }
     }
 }

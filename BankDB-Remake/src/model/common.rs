@@ -28,6 +28,31 @@ pub enum Popup {
     AddClientSuccess,
 }
 
+pub trait ListItemTrait {
+    fn len(&self) -> usize;
+}
+
+impl ListItemTrait for Vec<Popup> {
+    fn len(&self) -> usize {
+        Vec::len(self)
+    }
+}
+
+impl Popup {
+    pub fn to_list_string(&self) -> &str {
+        match self {
+            Popup::ViewInfo => "View info",
+            Popup::Deposit => "Make a deposit",
+            Popup::Withdraw => "Make a withdrawal",
+            Popup::Transfer => "Make a transfer",
+            Popup::ChangePsswd => "Change password",
+            Popup::FilterClients => "Filter clients",
+            Popup::AddClient => "Add a client",
+            _ => panic!("could not find a list string for popup {:?}", self)
+        } 
+    }
+}
+
 #[derive(Copy, Clone)]
 pub enum Button {
     Up,
@@ -46,7 +71,26 @@ pub enum CltData {
     PsswdHash,
 }
 
+impl ListItemTrait for Vec<CltData> {
+    fn len(&self) -> usize {
+        Vec::len(self)
+    }
+}
+
 impl CltData {
+    pub fn to_list_string(&self) -> &str {
+        match self {
+            CltData::Username => "Username",
+            CltData::Name => "Name",
+            CltData::Ci => "C.I.",
+            CltData::AccNum => "Account number",
+            CltData::Balance => "Balance",
+            CltData::AccType => "Account type",
+            CltData::AccStatus => "Account status",
+            CltData::PsswdHash => "Password",
+        }
+    }
+
     pub fn as_sql_col(&self) -> String {
         match self {
             Self::Username => String::from("username"),

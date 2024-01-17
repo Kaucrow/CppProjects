@@ -60,7 +60,7 @@ pub fn cleanup(app: &mut Arc<Mutex<App>>) -> Result<()> {
     } else {
         match app_lock.active_screen {
             Screen::Client => {
-                app_lock.client.action_list_state.select(None);
+                app_lock.client.actions_list_state.select(None);
             }
             Screen::Admin => {
                 match app_lock.admin.active_sidescreen {

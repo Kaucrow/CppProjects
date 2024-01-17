@@ -30,14 +30,14 @@ pub async fn update(app: &mut Arc<Mutex<App>>, pool: &Pool<Postgres>, event: Eve
         },
         Event::SelectAction(list_type) => {
             let mut app_lock = app.lock().unwrap();
-            let (list_state, popups) = match list_type {
-                ListType::ClientAction => (&app_lock.client.action_list_state, &app_lock.client.popups),
-                ListType::AdminAction => (&app_lock.admin.action_list_state, &app_lock.admin.popups),
+            let (list_state, actions) = match list_type {
+                ListType::ClientAction => (&app_lock.client.actions_list_state, &app_lock.client.actions),
+                ListType::AdminAction => (&app_lock.admin.action_list_state, &app_lock.admin.actions),
                 _ => panic!()
             };
 
             if let Some(selected) = list_state.selected() {
-                app_lock.active_popup = Some(*popups.get(&selected).unwrap_or_else(|| panic!("popup not found in popups HashMap")));
+                app_lock.active_popup = Some(*actions.get(selected).unwrap_or_else(|| panic!("popup not found in popups HashMap")));
                 match app_lock.active_popup.unwrap() {
                     Popup::Deposit | Popup::Withdraw | Popup::Transfer | Popup::ChangePsswd
                     => {
