@@ -51,8 +51,8 @@ def copy_paragraphs(destination, source_paragraphs, leave_space, replace):
             new_run.font.size = run.font.size
             new_run.font.name = run.font.name
 
-def copy_header(dest_document, teacher_name, teacher_ci, teacher_type):
-    header_document = Document('data/in/fmt/header.docx');
+def copy_header(DATA_FOLDER, dest_document, teacher_name, teacher_ci, teacher_type):
+    header_document = Document(DATA_FOLDER + '/in/format/header.docx');
     fmt_section0 = header_document.sections[0];
 
     dest_section0 = dest_document.sections[0];
@@ -87,8 +87,8 @@ def copy_header(dest_document, teacher_name, teacher_ci, teacher_type):
                     {'$1PROFESOR': teacher_name, '$2CI': teacher_ci, '$3TIPO': teacher_type}
                     );
 
-def copy_footer(dest_document, date):
-    footer_document = Document('data/in/fmt/footer.docx')
+def copy_footer(DATA_FOLDER, dest_document, date):
+    footer_document = Document(DATA_FOLDER + '/in/format/footer.docx')
     copy_paragraphs(dest_document,
                     footer_document.paragraphs,
                     None,

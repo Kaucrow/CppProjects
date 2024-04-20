@@ -1,16 +1,40 @@
 import sys
+import getopt
 import os
 import csv
 from format_copy import *
 from docx_data import *
-#from xlsx_data import *
 from docx.api import Document
 
-thesis_list = [];
-teachers_names = {};
-teachers_data = {};
+DATA_FOLDER = 'data'
 
-with open('data/in/csv/teachers.csv', encoding='utf-8') as teachers_file:
+try:
+    opts, args = getopt.getopt(sys.argv[1:], 'eh', ['example', 'help'])
+except getopt.GetoptError as err:
+    print(err)
+    exit(1)
+
+for opt, arg in opts:
+    if opt in ('-h', '--help'):
+        print(
+            '\n'.join(
+                line.strip() for line in
+                """
+                [-h, --help]: Displays this help screen.
+                [-e, --example]: Runs the program using the example files in the `data_ex` directory.
+                """.split('\n')
+            )
+        )
+        exit(0)
+
+    if opt in ('-e', '--example'):
+        DATA_FOLDER = 'data_ex'
+
+thesis_list = []
+teachers_names = {}
+teachers_data = {}
+
+with open(DATA_FOLDER + '/in/teachers/teachers.csv', encoding='utf-8') as teachers_file:
     csv_reader = csv.reader(teachers_file, delimiter=';');
     line_count = 0;
     for row in csv_reader:
@@ -26,23 +50,16 @@ with open('data/in/csv/teachers.csv', encoding='utf-8') as teachers_file:
 
 keys = ['No', 'ALUMNO', 'C.I.', 'FECHA DE DEFENSA', 'TITULO DE LA TESIS', 'JURADO PRINCIPAL', 'JURADO SUPLENTE', 'HORA', 'PERIODO'];
 
-docx_data_path = "data/in/docx/";
+calendars_path = DATA_FOLDER + '/in/calendars/';
 
-docx_files = os.listdir(docx_data_path);
+calendar_files = os.listdir(calendars_path);
 
-for file in docx_files:
-    get_docx_data(docx_data_path + file, thesis_list, keys);
-#get_docx_data(docx_data_path + "021-2023-C.docx", data, keys);
+for calendar in calendar_files:
+    get_docx_data(calendars_path + calendar, thesis_list, keys);
 
 dest_document = Document();
 filename = '';
 curr_period = None;
-
-"""for thesis in data:
-    print(thesis);
-    print(thesis['JURADO PRINCIPAL']);
-    print(thesis['JURADO PRINCIPAL'].split('\n')[2]);
-"""
 
 date = input("Elaboration date (for footer): ");
 
@@ -75,7 +92,7 @@ for teacher, teacher_info in teachers_data.items():
         if thesis['TYPE'] == 'tutor':
             if tutor_curr_period == "":
                 tutor_doc = Document();
-                copy_header(tutor_doc, teacher_info['FULL NAME'], teacher_info['C.I.'], 'TUTOR');
+                copy_header(DATA_FOLDER, tutor_doc, teacher_info['FULL NAME'], teacher_info['C.I.'], 'TUTOR');
             
             if thesis_data['PERIODO'] != tutor_curr_period:
                 tutor_curr_period = thesis_data['PERIODO'];
@@ -93,7 +110,7 @@ for teacher, teacher_info in teachers_data.items():
         elif thesis['TYPE'] == 'jury':
             if jury_curr_period == "":
                 jury_doc = Document();
-                copy_header(jury_doc, teacher_info['FULL NAME'], teacher_info['C.I.'], 'JURADO');
+                copy_header(DATA_FOLDER, jury_doc, teacher_info['FULL NAME'], teacher_info['C.I.'], 'JURADO');
             
             if thesis_data['PERIODO'] != jury_curr_period:
                 jury_curr_period = thesis_data['PERIODO'];
@@ -126,12 +143,12 @@ for teacher, teacher_info in teachers_data.items():
         title_run.italic = True;
 
     if tutor_curr_period != "":
-        copy_footer(tutor_doc, date);
-        tutor_doc.save('data/out/CONSTANCIA_TUTOR_' + teacher_info['FILENAME'] + '.docx');
+        copy_footer(DATA_FOLDER, tutor_doc, date);
+        tutor_doc.save(DATA_FOLDER + '/out/CONSTANCIA_TUTOR_' + teacher_info['FILENAME'] + '.docx');
 
     if jury_curr_period != "":
-        copy_footer(jury_doc, date);
-        jury_doc.save('data/out/CONSTANCIA_JURADO_' + teacher_info['FILENAME'] + '.docx');
+        copy_footer(DATA_FOLDER, jury_doc, date);
+        jury_doc.save(DATA_FOLDER + '/out/CONSTANCIA_JURADO_' + teacher_info['FILENAME'] + '.docx');
 
 """
 for i in range(3):

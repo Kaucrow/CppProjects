@@ -30,5 +30,4 @@ def get_docx_data(document_path, data, keys):
         row_data = dict(zip(keys, text))
 
         data.append(row_data);
-        #data[get_docx_data.thesis_count] = row_data;
         get_docx_data.thesis_count += 1; 
