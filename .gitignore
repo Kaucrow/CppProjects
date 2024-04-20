@@ -133,7 +133,7 @@ TAGS
 TAGS.*
 
 ## Python
-__pycache__/
+**/__pycache__/
 **/*.py[cod]
 **/*$py.class
 
@@ -146,5 +146,4 @@ __pycache__/
 **/tests/rustdoc-gui/src/**.lock
 
 ## ThesisRecordBuilder
-**/src/__pycache__/
 ThesisRecordBuilder/data/*
