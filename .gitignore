@@ -144,3 +144,7 @@ __pycache__/
 
 ## Rustdoc GUI tests
 **/tests/rustdoc-gui/src/**.lock
+
+## ThesisRecordBuilder
+**/src/__pycache__/
+ThesisRecordBuilder/data/*
