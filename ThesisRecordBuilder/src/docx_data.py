@@ -1,5 +1,6 @@
 import re
 import os
+from tqdm import tqdm, trange
 from docx.api import Document
 
 def get_docx_data(document_path, data, keys):
@@ -11,6 +12,8 @@ def get_docx_data(document_path, data, keys):
 
     filename = os.path.splitext(os.path.basename(document_path))[0];
     period = filename[filename.find('-') + 1: ];
+
+    #pbar = tqdm(total = len(table.rows[1: ]), position=1, leave=False, bar_format='Row: {n}/{total} [{percentage:0.0f}%]')
 
     for i, row in enumerate(table.rows[1: ]):
         text = [];
@@ -31,3 +34,7 @@ def get_docx_data(document_path, data, keys):
 
         data.append(row_data);
         get_docx_data.thesis_count += 1; 
+
+        #pbar.update(1)
+    
+    #pbar.close()

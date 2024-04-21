@@ -1,4 +1,5 @@
 from PIL import Image
+import os
 import fitz
 import pytesseract as tess
 import numpy as np
@@ -56,7 +57,7 @@ def get_verdicts_data(verdict_path, data, globals):
     if cipos == -1:
         cipos = text.find('No.')
         if cipos == -1:
-            raise Exception("Could not find the `V-` | `No.` C.I. identifier.", color_img, tess_im, text)
+            raise Exception("Could not find the C.I. identifier.", color_img, tess_im, text)
 
     cipos += 2
     citext = text[cipos:cipos+14]
@@ -68,7 +69,7 @@ def get_verdicts_data(verdict_path, data, globals):
         student = find_ci(data, ci)
     except Exception as err:
         #raise err
-        return
+        ""
 
     grade_identifiers = ['con:', 'bado con', 's aprob']
     gradepos = -1
@@ -77,7 +78,7 @@ def get_verdicts_data(verdict_path, data, globals):
         if gradepos != -1:
             break
     else:
-        raise Exception("Could not find the `con:` | `bado con` grade identifier.", color_img, tess_im, text)
+        raise Exception('Could not find the grade identifier.', color_img, tess_im, text)
 
     gradepos += len('con:')
     gradetext = text[gradepos:gradepos+20]
@@ -85,14 +86,25 @@ def get_verdicts_data(verdict_path, data, globals):
 
     student['CALIFICACION'] = grade
 
+    print(os.path.basename(verdict_path))
+    if os.path.basename(verdict_path) == 'BERMUDEZ CHACON, MARIA ALEJANDRA.pdf':
+        raise Exception('Should have found mention')
     mentionpos = text.find('MENCI')
     if mentionpos != -1:
-        print(verdict_path)
         mentiontext = text[mentionpos:mentionpos+20]
         words = mentiontext.split(' ')
         mention = words[1]
+
+        if not (mention in globals.KNOWN_MENTIONS):
+            raise Exception(f'Mention unknown: {mention}', color_img, tess_im, text)
+
+        if globals.DEBUG:
+            print(f'Found mention `{mention}` in file `{os.path.basename(verdict_path)}`')
+        
         student['MENCION'] = mention
     else:
+        if os.path.basename(verdict_path) == 'BERMUDEZ CHACON, MARIA ALEJANDRA.pdf':
+            raise Exception('Should have found mention')
         student['MENCION'] = None
 
 def get_contours(im):

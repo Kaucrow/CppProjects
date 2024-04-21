@@ -11,6 +11,7 @@ from docx.api import Document
 class Globals:
     DEBUG: bool = False
     DATA_FOLDER: str = 'data'
+    KNOWN_MENTIONS = ['HONORIFICA', 'PUBLICACION']
 
 global globals
 globals = Globals()
@@ -73,24 +74,31 @@ keys = [
 calendars_path = globals.DATA_FOLDER + '/in/calendars/'
 calendar_files = os.listdir(calendars_path)
 
-pbar = tqdm(total = len(calendar_files))
+print('Collecting data...')
 
-for calendar in calendar_files:
-    get_docx_data(calendars_path + calendar, thesis_list, keys)
-    pbar.set_description(f"Processing: {calendar}")
-    pbar.update(1)
+with tqdm(total=len(calendar_files), leave = True) as pbar_cal:
+    for calendar in calendar_files:
+        pbar_cal.set_description(f"Calendar: {calendar}")
+        get_docx_data(calendars_path + calendar, thesis_list, keys)
+        pbar_cal.update(1)
 
 verdicts_path = globals.DATA_FOLDER + '/in/verdicts/'
 verdict_files = os.listdir(verdicts_path)
-for verdict in verdict_files:
-    try:
-        get_verdicts_data(verdicts_path + verdict, thesis_list, globals)
-    except Exception as err:
-        print('[ ERR ] Error occurred when processing verdict: ' + verdicts_path + verdict + '\n\terr: ' + err.args[0])
-        print('\tTesseract text:\n\n' + err.args[3])
-        display(err.args[1])
-        display(err.args[2])
-        exit(1)
+
+print()
+
+with tqdm(total=len(verdict_files), leave = True) as pbar_vrd:
+    for verdict in verdict_files:
+        pbar_vrd.set_description(f"Verdict: {os.path.basename(verdict)}")
+        try:
+            get_verdicts_data(verdicts_path + verdict, thesis_list, globals)
+        except Exception as err:
+            print('[ ERR ] Error occurred when processing verdict: ' + verdicts_path + verdict + '\n\terr: ' + err.args[0])
+            print('\tTesseract text:\n\n' + err.args[3])
+            display(err.args[1])
+            display(err.args[2])
+            exit(1)
+        pbar_vrd.update(1)
 
 dest_document = Document();
 filename = '';
