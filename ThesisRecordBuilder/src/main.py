@@ -2,15 +2,27 @@ import sys
 import getopt
 import os
 import csv
+from tqdm import tqdm, trange
 from format_copy import *
 from docx_data import *
-from verdicts_data import *
+from verdicts_data import get_verdicts_data, display
 from docx.api import Document
 
-DATA_FOLDER = 'data'
+class Globals:
+    DEBUG: bool = False
+    DATA_FOLDER: str = 'data'
+
+global globals
+globals = Globals()
+
+#from globals import DEBUG, DATA_FOLDER
+
+#def mod_debug(new_val):
+#    global DEBUG
+#    DEBUG = new_val
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 'eh', ['example', 'help'])
+    opts, args = getopt.getopt(sys.argv[1:], 'ehd', ['example', 'help', 'debug'])
 except getopt.GetoptError as err:
     print(err)
     exit(1)
@@ -22,6 +34,7 @@ for opt, arg in opts:
                 line.strip() for line in
                 """
                 [-h, --help]: Displays this help screen.
+                [-d, --debug]: Runs the program in debug mode.
                 [-e, --example]: Runs the program using the example files in the `data_ex` directory.
                 """.split('\n')
             )
@@ -29,13 +42,16 @@ for opt, arg in opts:
         exit(0)
 
     if opt in ('-e', '--example'):
-        DATA_FOLDER = 'data_ex'
+        globals.DATA_FOLDER = 'data_ex'
+
+    if opt in ('-d', '--debug'):
+        globals.DEBUG = True
 
 thesis_list = []
 teachers_names = {}
 teachers_data = {}
 
-with open(DATA_FOLDER + '/in/teachers/teachers.csv', encoding='utf-8') as teachers_file:
+with open(globals.DATA_FOLDER + '/in/teachers/teachers.csv', encoding='utf-8') as teachers_file:
     csv_reader = csv.reader(teachers_file, delimiter=';');
     line_count = 0;
     for row in csv_reader:
@@ -54,18 +70,26 @@ keys = [
     'JURADO SUPLENTE', 'HORA', 'PERIODO', 'CALIFICACION', 'MENCION'
 ]
 
-calendars_path = DATA_FOLDER + '/in/calendars/'
+calendars_path = globals.DATA_FOLDER + '/in/calendars/'
 calendar_files = os.listdir(calendars_path)
+
+pbar = tqdm(total = len(calendar_files))
+
 for calendar in calendar_files:
     get_docx_data(calendars_path + calendar, thesis_list, keys)
+    pbar.set_description(f"Processing: {calendar}")
+    pbar.update(1)
 
-verdicts_path = DATA_FOLDER + '/in/verdicts/'
+verdicts_path = globals.DATA_FOLDER + '/in/verdicts/'
 verdict_files = os.listdir(verdicts_path)
 for verdict in verdict_files:
     try:
-        get_verdicts_data(verdicts_path + verdict, thesis_list)
+        get_verdicts_data(verdicts_path + verdict, thesis_list, globals)
     except Exception as err:
-        print("[ ERR ] Error occurred when processing verdict: " + verdicts_path + verdict + '\n\terr: ' + err.args[0])
+        print('[ ERR ] Error occurred when processing verdict: ' + verdicts_path + verdict + '\n\terr: ' + err.args[0])
+        print('\tTesseract text:\n\n' + err.args[3])
+        display(err.args[1])
+        display(err.args[2])
         exit(1)
 
 dest_document = Document();
@@ -103,7 +127,7 @@ for teacher, teacher_info in teachers_data.items():
         if thesis['TYPE'] == 'tutor':
             if tutor_curr_period == "":
                 tutor_doc = Document();
-                copy_header(DATA_FOLDER, tutor_doc, teacher_info['FULL NAME'], teacher_info['C.I.'], 'TUTOR');
+                copy_header(globals.DATA_FOLDER, tutor_doc, teacher_info['FULL NAME'], teacher_info['C.I.'], 'TUTOR');
             
             if thesis_data['PERIODO'] != tutor_curr_period:
                 tutor_curr_period = thesis_data['PERIODO'];
@@ -121,7 +145,7 @@ for teacher, teacher_info in teachers_data.items():
         elif thesis['TYPE'] == 'jury':
             if jury_curr_period == "":
                 jury_doc = Document();
-                copy_header(DATA_FOLDER, jury_doc, teacher_info['FULL NAME'], teacher_info['C.I.'], 'JURADO');
+                copy_header(globals.DATA_FOLDER, jury_doc, teacher_info['FULL NAME'], teacher_info['C.I.'], 'JURADO');
             
             if thesis_data['PERIODO'] != jury_curr_period:
                 jury_curr_period = thesis_data['PERIODO'];
@@ -154,12 +178,12 @@ for teacher, teacher_info in teachers_data.items():
         title_run.italic = True;
 
     if tutor_curr_period != "":
-        copy_footer(DATA_FOLDER, tutor_doc, date);
-        tutor_doc.save(DATA_FOLDER + '/out/CONSTANCIA_TUTOR_' + teacher_info['FILENAME'] + '.docx');
+        copy_footer(globals.DATA_FOLDER, tutor_doc, date);
+        tutor_doc.save(globals.DATA_FOLDER + '/out/CONSTANCIA_TUTOR_' + teacher_info['FILENAME'] + '.docx');
 
     if jury_curr_period != "":
-        copy_footer(DATA_FOLDER, jury_doc, date);
-        jury_doc.save(DATA_FOLDER + '/out/CONSTANCIA_JURADO_' + teacher_info['FILENAME'] + '.docx');
+        copy_footer(globals.DATA_FOLDER, jury_doc, date);
+        jury_doc.save(globals.DATA_FOLDER + '/out/CONSTANCIA_JURADO_' + teacher_info['FILENAME'] + '.docx');
 
 """
 for i in range(3):

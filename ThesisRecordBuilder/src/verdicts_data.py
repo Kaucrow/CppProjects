@@ -5,11 +5,16 @@ import numpy as np
 import cv2
 import re
 
-def get_verdicts_data(verdict_path, data):
+def get_verdicts_data(verdict_path, data, globals):
     pdf = fitz.open(verdict_path)
     first_page = pdf[0]
-    pix = first_page.get_pixmap()
+    zoom = 2.0
+    mat = fitz.Matrix(zoom, zoom)
+    pix = first_page.get_pixmap(matrix = mat, dpi = 200)
     im = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.h, pix.w, pix.n)
+    im_h, im_w, im_c = im.shape
+    im = im[40:im_w - 40, 40:im_h - 40]
+    #display(im)
 
     im = deskew(im)
     im = grayscale(im)
@@ -20,6 +25,9 @@ def get_verdicts_data(verdict_path, data):
     #im = remove_noise(im)
 
     color_img = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
+    #dilated = get_dilated(im, (43, 43))
+    #display(dilated)
+    #cnts = get_contours(dilated)
     x, y, w, h = cv2.boundingRect(get_main_contour(im))
     cv2.rectangle(color_img, (x, y), (x + w, y + h), (36, 255, 12), 2)
     #for c in cnts:
@@ -29,18 +37,26 @@ def get_verdicts_data(verdict_path, data):
     #display(color_img)
 
     tess_im = im_cpy[y: y+ h, x: x + w]
+    #display(tess_im)
     color = [255, 255, 255]
     top, bottom, left, right = [50] * 4
     tess_im = cv2.copyMakeBorder(tess_im, top, bottom, left, right, cv2.BORDER_CONSTANT, value = color)
     im_h, im_w = tess_im.shape
-    tess_im = cv2.resize(tess_im, (int(im_w * 1.2), int(im_h * 1.2)), interpolation = cv2.INTER_LINEAR)
+    #tess_im = cv2.resize(tess_im, (int(im_w * 2.0), int(im_h * 2.0)), interpolation = cv2.INTER_LINEAR)
+    #display(tess_im)
+    tess_im = binarize(tess_im, 180, 255)
+    #tess_im = thin_font(tess_im)
+    #display(tess_im)
     text = tess.image_to_string(tess_im)
 
-    print(text)
+    if globals.DEBUG:
+        print(text)
 
     cipos = text.find('V-')
     if cipos == -1:
-        raise Exception("Could not find the `V-` C.I. identifier.")
+        cipos = text.find('No.')
+        if cipos == -1:
+            raise Exception("Could not find the `V-` | `No.` C.I. identifier.", color_img, tess_im, text)
 
     cipos += 2
     citext = text[cipos:cipos+14]
@@ -54,9 +70,14 @@ def get_verdicts_data(verdict_path, data):
         #raise err
         return
 
-    gradepos = text.find('con:')
-    if gradepos == -1:
-        raise Exception("Could not find the `con:` grade identifier.")
+    grade_identifiers = ['con:', 'bado con', 's aprob']
+    gradepos = -1
+    for identifier in grade_identifiers:
+        gradepos = text.find(identifier)
+        if gradepos != -1:
+            break
+    else:
+        raise Exception("Could not find the `con:` | `bado con` grade identifier.", color_img, tess_im, text)
 
     gradepos += len('con:')
     gradetext = text[gradepos:gradepos+20]
@@ -74,32 +95,32 @@ def get_verdicts_data(verdict_path, data):
     else:
         student['MENCION'] = None
 
-def get_main_contour(im):
-    def get_dilated(im, ksize):
+def get_contours(im):
+    cnts = cv2.findContours(im, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    cnts = cnts[0] if len(cnts) == 2 else cnts[1]
+    cnts = sorted(cnts, key = cv2.contourArea, reverse=True)
+    return cnts
+
+def get_dilated(im, ksize):
         blur = cv2.GaussianBlur(im, (9, 9), 0)
         thresh = cv2.threshold(blur, 127, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, ksize)
         dilate = cv2.dilate(thresh, kernel, iterations = 1)
         return dilate
-    
-    def get_contours(im):
-        cnts = cv2.findContours(im, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        cnts = cnts[0] if len(cnts) == 2 else cnts[1]
-        cnts = sorted(cnts, key = cv2.contourArea, reverse=True)
-        return cnts
 
-    dilated = get_dilated(im, (23, 13))
+def get_main_contour(im):
+    dilated = get_dilated(im, (43, 43))
     #display(dilated)
     cnts = get_contours(dilated)
 
     _, _, w, h = cv2.boundingRect(cnts[0])
     if not (h > 200):
-        dilated = get_dilated(im, (23, 23))
+        dilated = get_dilated(im, (43, 63))
         #display(dilated)
         cnts = get_contours(im)
         return cnts[0]
     elif not (w > 450):
-        dilated = get_dilated(im, (33, 13))
+        dilated = get_dilated(im, (63, 43))
         #display(dilated)
         cnts = get_contours(im)
         return cnts[0]
