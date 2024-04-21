@@ -4,6 +4,7 @@ import os
 import csv
 from format_copy import *
 from docx_data import *
+from verdicts_data import *
 from docx.api import Document
 
 DATA_FOLDER = 'data'
@@ -48,18 +49,28 @@ with open(DATA_FOLDER + '/in/teachers/teachers.csv', encoding='utf-8') as teache
             filename = base_name.replace(' ', '_').upper();
             teachers_data[base_name] = {'FILENAME':filename, 'FULL NAME':row[3] + ' ' + row[0], 'C.I.':row[2], 'THESIS':[]};
 
-keys = ['No', 'ALUMNO', 'C.I.', 'FECHA DE DEFENSA', 'TITULO DE LA TESIS', 'JURADO PRINCIPAL', 'JURADO SUPLENTE', 'HORA', 'PERIODO'];
+keys = [
+    'No', 'ALUMNO', 'C.I.', 'FECHA DE DEFENSA', 'TITULO DE LA TESIS', 'JURADO PRINCIPAL',
+    'JURADO SUPLENTE', 'HORA', 'PERIODO', 'CALIFICACION', 'MENCION'
+]
 
-calendars_path = DATA_FOLDER + '/in/calendars/';
-
-calendar_files = os.listdir(calendars_path);
-
+calendars_path = DATA_FOLDER + '/in/calendars/'
+calendar_files = os.listdir(calendars_path)
 for calendar in calendar_files:
-    get_docx_data(calendars_path + calendar, thesis_list, keys);
+    get_docx_data(calendars_path + calendar, thesis_list, keys)
+
+verdicts_path = DATA_FOLDER + '/in/verdicts/'
+verdict_files = os.listdir(verdicts_path)
+for verdict in verdict_files:
+    try:
+        get_verdicts_data(verdicts_path + verdict, thesis_list)
+    except Exception as err:
+        print("[ ERR ] Error occurred when processing verdict: " + verdicts_path + verdict + '\n\terr: ' + err.args[0])
+        exit(1)
 
 dest_document = Document();
 filename = '';
-curr_period = None;
+curr_period = None
 
 date = input("Elaboration date (for footer): ");
 

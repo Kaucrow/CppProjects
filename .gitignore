@@ -148,3 +148,4 @@ TAGS.*
 ## ThesisRecordBuilder
 ThesisRecordBuilder/data/*
 ThesisRecordBuilder/data_ex/out/*
+ThesisRecordBuilder/data_ex/in/verdicts/*
