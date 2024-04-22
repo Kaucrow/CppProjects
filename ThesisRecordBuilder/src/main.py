@@ -8,6 +8,14 @@ from docx_data import *
 from verdicts_data import get_verdicts_data, display
 from docx.api import Document
 
+def clear():
+    if os.name == 'nt':
+        _ = os.system('cls')
+    else:
+        _ = os.system('clear')
+
+clear()
+
 class Globals:
     DEBUG: bool = False
     DATA_FOLDER: str = 'data'
@@ -15,12 +23,6 @@ class Globals:
 
 global globals
 globals = Globals()
-
-#from globals import DEBUG, DATA_FOLDER
-
-#def mod_debug(new_val):
-#    global DEBUG
-#    DEBUG = new_val
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], 'ehd', ['example', 'help', 'debug'])

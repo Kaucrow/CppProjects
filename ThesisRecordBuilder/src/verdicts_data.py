@@ -15,7 +15,6 @@ def get_verdicts_data(verdict_path, data, globals):
     im = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.h, pix.w, pix.n)
     im_h, im_w, im_c = im.shape
     im = im[40:im_w - 40, 40:im_h - 40]
-    #display(im)
 
     im = deskew(im)
     im = grayscale(im)
@@ -23,12 +22,8 @@ def get_verdicts_data(verdict_path, data, globals):
     im_cpy = im
 
     im = binarize(im, 190, 200)
-    #im = remove_noise(im)
 
     color_img = cv2.cvtColor(im, cv2.COLOR_GRAY2BGR)
-    #dilated = get_dilated(im, (43, 43))
-    #display(dilated)
-    #cnts = get_contours(dilated)
     x, y, w, h = cv2.boundingRect(get_main_contour(im))
     cv2.rectangle(color_img, (x, y), (x + w, y + h), (36, 255, 12), 2)
     #for c in cnts:
@@ -50,9 +45,6 @@ def get_verdicts_data(verdict_path, data, globals):
     #display(tess_im)
     text = tess.image_to_string(tess_im)
 
-    if globals.DEBUG:
-        print(text)
-
     cipos = text.find('V-')
     if cipos == -1:
         cipos = text.find('No.')
@@ -62,14 +54,18 @@ def get_verdicts_data(verdict_path, data, globals):
     cipos += 2
     citext = text[cipos:cipos+14]
     ci = re.sub('[^0-9]', '', citext)
-    #ci = '00000001'
 
-    student = None
+    thesis = None
     try:
-        student = find_ci(data, ci)
+        thesis = find_ci(data, ci)
     except Exception as err:
+        if globals.DEBUG:
+            print(f'\nNot found: C.I. {ci}\n')
         #raise err
-        ""
+        return
+    
+    if globals.DEBUG:
+        print(f'\nFile: {os.path.basename(verdict_path)}\nC.I.: {thesis['C.I.']}\nName: {thesis['ALUMNO'].split('\n')[0]}')
 
     grade_identifiers = ['con:', 'bado con', 's aprob']
     gradepos = -1
@@ -83,12 +79,12 @@ def get_verdicts_data(verdict_path, data, globals):
     gradepos += len('con:')
     gradetext = text[gradepos:gradepos+20]
     grade = re.sub('[^0-9]', '', gradetext)
+    
+    if globals.DEBUG:
+        print(f'Grade: {grade}')
 
-    student['CALIFICACION'] = grade
+    thesis['CALIFICACION'] = grade
 
-    print(os.path.basename(verdict_path))
-    if os.path.basename(verdict_path) == 'BERMUDEZ CHACON, MARIA ALEJANDRA.pdf':
-        raise Exception('Should have found mention')
     mentionpos = text.find('MENCI')
     if mentionpos != -1:
         mentiontext = text[mentionpos:mentionpos+20]
@@ -99,13 +95,14 @@ def get_verdicts_data(verdict_path, data, globals):
             raise Exception(f'Mention unknown: {mention}', color_img, tess_im, text)
 
         if globals.DEBUG:
-            print(f'Found mention `{mention}` in file `{os.path.basename(verdict_path)}`')
+            print(f'Mention: {mention}')
         
-        student['MENCION'] = mention
+        thesis['MENCION'] = mention
     else:
-        if os.path.basename(verdict_path) == 'BERMUDEZ CHACON, MARIA ALEJANDRA.pdf':
-            raise Exception('Should have found mention')
-        student['MENCION'] = None
+        thesis['MENCION'] = None
+
+    if globals.DEBUG:
+        print()
 
 def get_contours(im):
     cnts = cv2.findContours(im, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
