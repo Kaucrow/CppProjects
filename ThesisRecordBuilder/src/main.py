@@ -18,7 +18,8 @@ clear()
 
 class Globals:
     DEBUG: bool = False
-    DATA_FOLDER: str = 'data'
+    DATA_FOLDER: str = 'data/'
+    MISSING_STDTS: str = 'out/00_missingstudents.txt'
     KNOWN_MENTIONS = ['HONORIFICA', 'PUBLICACION']
 
 global globals
@@ -50,11 +51,16 @@ for opt, arg in opts:
     if opt in ('-d', '--debug'):
         globals.DEBUG = True
 
+try:
+    os.remove(globals.DATA_FOLDER + globals.MISSING_STDTS)
+except OSError:
+    pass
+
 thesis_list = []
 teachers_names = {}
 teachers_data = {}
 
-with open(globals.DATA_FOLDER + '/in/teachers/teachers.csv', encoding='utf-8') as teachers_file:
+with open(globals.DATA_FOLDER + 'in/teachers/teachers.csv', encoding='utf-8') as teachers_file:
     csv_reader = csv.reader(teachers_file, delimiter=';');
     line_count = 0;
     for row in csv_reader:
@@ -73,7 +79,7 @@ keys = [
     'JURADO SUPLENTE', 'HORA', 'PERIODO', 'CALIFICACION', 'MENCION'
 ]
 
-calendars_path = globals.DATA_FOLDER + '/in/calendars/'
+calendars_path = globals.DATA_FOLDER + 'in/calendars/'
 calendar_files = os.listdir(calendars_path)
 
 print('Collecting data...')
@@ -84,7 +90,7 @@ with tqdm(total=len(calendar_files), leave = True) as pbar_cal:
         get_docx_data(calendars_path + calendar, thesis_list, keys)
         pbar_cal.update(1)
 
-verdicts_path = globals.DATA_FOLDER + '/in/verdicts/'
+verdicts_path = globals.DATA_FOLDER + 'in/verdicts/'
 verdict_files = os.listdir(verdicts_path)
 
 print()
@@ -189,11 +195,11 @@ for teacher, teacher_info in teachers_data.items():
 
     if tutor_curr_period != "":
         copy_footer(globals.DATA_FOLDER, tutor_doc, date);
-        tutor_doc.save(globals.DATA_FOLDER + '/out/CONSTANCIA_TUTOR_' + teacher_info['FILENAME'] + '.docx');
+        tutor_doc.save(globals.DATA_FOLDER + 'out/CONSTANCIA_TUTOR_' + teacher_info['FILENAME'] + '.docx');
 
     if jury_curr_period != "":
         copy_footer(globals.DATA_FOLDER, jury_doc, date);
-        jury_doc.save(globals.DATA_FOLDER + '/out/CONSTANCIA_JURADO_' + teacher_info['FILENAME'] + '.docx');
+        jury_doc.save(globals.DATA_FOLDER + 'out/CONSTANCIA_JURADO_' + teacher_info['FILENAME'] + '.docx');
 
 """
 for i in range(3):

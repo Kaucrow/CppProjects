@@ -9,9 +9,9 @@ import re
 def get_verdicts_data(verdict_path, data, globals):
     pdf = fitz.open(verdict_path)
     first_page = pdf[0]
-    zoom = 2.0
+    zoom = 2.5
     mat = fitz.Matrix(zoom, zoom)
-    pix = first_page.get_pixmap(matrix = mat, dpi = 200)
+    pix = first_page.get_pixmap(matrix = mat, dpi = 300)
     im = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.h, pix.w, pix.n)
     im_h, im_w, im_c = im.shape
     im = im[40:im_w - 40, 40:im_h - 40]
@@ -52,7 +52,7 @@ def get_verdicts_data(verdict_path, data, globals):
             raise Exception("Could not find the C.I. identifier.", color_img, tess_im, text)
 
     cipos += 2
-    citext = text[cipos:cipos+14]
+    citext = text[cipos:cipos+18]
     ci = re.sub('[^0-9]', '', citext)
 
     thesis = None
@@ -61,6 +61,8 @@ def get_verdicts_data(verdict_path, data, globals):
     except Exception as err:
         if globals.DEBUG:
             print(f'\nNot found: C.I. {ci}\n')
+            f = open(globals.DATA_FOLDER + globals.MISSING_STDTS, 'a')
+            f.write(f'{os.path.basename(verdict_path)}: {ci}\n')
         #raise err
         return
     
@@ -74,7 +76,7 @@ def get_verdicts_data(verdict_path, data, globals):
         if gradepos != -1:
             break
     else:
-        raise Exception('Could not find the grade identifier.', color_img, tess_im, text)
+        raise Exception('Could not find the grade identifier.', except_im_resize(color_img), except_im_resize(tess_im), text)
 
     gradepos += len('con:')
     gradetext = text[gradepos:gradepos+20]
@@ -104,6 +106,16 @@ def get_verdicts_data(verdict_path, data, globals):
     if globals.DEBUG:
         print()
 
+def except_im_resize(im):
+    im_h: int
+    im_w: int
+    try:
+        im_h, im_w, _ = im.shape
+    except:
+        im_h, im_w = im.shape
+    resized = im
+    return cv2.resize(resized, (int(im_w * 0.4), int(im_h * 0.4)))
+
 def get_contours(im):
     cnts = cv2.findContours(im, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     cnts = cnts[0] if len(cnts) == 2 else cnts[1]
@@ -118,18 +130,18 @@ def get_dilated(im, ksize):
         return dilate
 
 def get_main_contour(im):
-    dilated = get_dilated(im, (43, 43))
+    dilated = get_dilated(im, (63, 63))
     #display(dilated)
     cnts = get_contours(dilated)
 
     _, _, w, h = cv2.boundingRect(cnts[0])
     if not (h > 200):
-        dilated = get_dilated(im, (43, 63))
+        dilated = get_dilated(im, (63, 83))
         #display(dilated)
         cnts = get_contours(im)
         return cnts[0]
     elif not (w > 450):
-        dilated = get_dilated(im, (63, 43))
+        dilated = get_dilated(im, (83, 63))
         #display(dilated)
         cnts = get_contours(im)
         return cnts[0]
