@@ -149,3 +149,8 @@ TAGS.*
 ThesisRecordBuilder/data/*
 ThesisRecordBuilder/data_ex/out/*
 ThesisRecordBuilder/data_ex/in/verdicts/*
+
+## Rust WebServer
+RustWebserver/backend/settings/base.yaml
+RustWebserver/backend/settings/development.yaml
+RustWebserver/backend/settings/production.yaml
