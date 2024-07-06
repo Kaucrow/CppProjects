@@ -85,7 +85,20 @@ async fn run(
 
     let server = actix_web::HttpServer::new(move || {
         actix_web::App::new()
-            .wrap(if settings.debug {
+            .wrap(
+            actix_cors::Cors::default()
+                .allowed_origin(&settings.frontend_url)
+                .allowed_methods(vec!["GET", "POST", "PATH", "DELETE"])
+                .allowed_headers(vec![
+                    actix_web::http::header::AUTHORIZATION,
+                    actix_web::http::header::ACCEPT,
+                ])
+                .allowed_header(actix_web::http::header::CONTENT_TYPE)
+                .expose_headers(&[actix_web::http::header::CONTENT_DISPOSITION])
+                .supports_credentials()
+                .max_age(3600),
+            )
+            .wrap(
                 actix_session::SessionMiddleware::builder(
                     actix_session::storage::CookieSessionStore::default(),
                     secret_key.clone(),
@@ -94,12 +107,7 @@ async fn run(
                 .cookie_same_site(actix_web::cookie::SameSite::None)
                 .cookie_secure(true)
                 .build()
-            } else {
-                actix_session::SessionMiddleware::new(
-                    actix_session::storage::CookieSessionStore::default(),
-                    secret_key.clone(),
-                )
-            })
+            )
             .service(crate::routes::health_check)
             .configure(crate::routes::auth_routes_config)
             // Add database pool to application state
