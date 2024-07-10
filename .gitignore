@@ -136,6 +136,10 @@ TAGS.*
 **/__pycache__/
 **/*.py[cod]
 **/*$py.class
+**/Scripts/
+**/Lib/
+**/Include/
+**/pyvenv.cfg
 
 ## Node
 **/node_modules
@@ -154,3 +158,6 @@ ThesisRecordBuilder/data_ex/in/verdicts/*
 RustWebserver/backend/settings/base.yaml
 RustWebserver/backend/settings/development.yaml
 RustWebserver/backend/settings/production.yaml
+
+## GoogleImagesScraper
+GoogleImagesScraper/downloaded_images
