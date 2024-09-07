@@ -67,7 +67,8 @@ def get_verdicts_data(verdict_path, data, globals):
         return
     
     if globals.DEBUG:
-        print(f'\nFile: {os.path.basename(verdict_path)}\nC.I.: {thesis['C.I.']}\nName: {thesis['ALUMNO'].split('\n')[0]}')
+        name = thesis['ALUMNO'].split('\n')[0];
+        print(f"\nFile: {os.path.basename(verdict_path)}\nC.I.: {thesis['C.I.']}\nName: {name}")
 
     grade_identifiers = ['con:', 'bado con', 's aprob']
     gradepos = -1
