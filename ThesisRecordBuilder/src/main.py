@@ -94,18 +94,18 @@ if globals.VERSION == 1:
     teachers_data = {}
 
     with open(globals.DATA_FOLDER + 'in/teachers/teachers.csv', encoding='utf-8') as teachers_file:
-        csv_reader = csv.reader(teachers_file, delimiter=';');
-        line_count = 0;
+        csv_reader = csv.reader(teachers_file, delimiter=';')
+        line_count = 0
         for row in csv_reader:
             if line_count < 2:
-                line_count += 1;
-                continue;
+                line_count += 1
+                continue
             else:
-                base_name = row[1].split('|')[0];
+                base_name = row[1].split('|')[0]
                 for teacher in row[1].split('|'):
-                    teachers_names[teacher] = base_name;
-                filename = base_name.replace(' ', '_').upper();
-                teachers_data[base_name] = {'FILENAME':filename, 'FULL NAME':row[3] + ' ' + row[0], 'C.I.':row[2], 'THESIS':[]};
+                    teachers_names[teacher] = base_name
+                filename = base_name.replace(' ', '_').upper()
+                teachers_data[base_name] = {'FILENAME':filename, 'FULL NAME':row[3] + ' ' + row[0], 'C.I.':row[2], 'THESIS':[]}
 
     keys = [
         'No', 'ALUMNO', 'C.I.', 'FECHA DE DEFENSA', 'TITULO DE LA TESIS', 'JURADO PRINCIPAL',
@@ -149,92 +149,92 @@ if globals.VERSION == 1:
 
     for i in range(3):
         for idx, thesis in enumerate(thesis_list):
-            teacher_found_name = thesis['JURADO PRINCIPAL'].split('\n')[i].replace('Arq.', '').strip();
+            teacher_found_name = thesis['JURADO PRINCIPAL'].split('\n')[i].replace('Arq.', '').strip()
             if teacher_found_name in teachers_names:
-                teacher_real_name = teachers_names[teacher_found_name];
+                teacher_real_name = teachers_names[teacher_found_name]
                 if i == 0:
-                    teachers_data[teacher_real_name]['THESIS'].append({'IDX':idx, 'TYPE':'tutor'});
+                    teachers_data[teacher_real_name]['THESIS'].append({'IDX':idx, 'TYPE':'tutor'})
                 else:
-                    teachers_data[teacher_real_name]['THESIS'].append({'IDX':idx, 'TYPE':'jury'});
+                    teachers_data[teacher_real_name]['THESIS'].append({'IDX':idx, 'TYPE':'jury'})
             else:
-                sys.exit('Could not find real name of teacher \'' + teacher_found_name + '\' (From thesis of period ' + thesis['PERIODO'] + ').\nPlease update the `teachers.csv` file');
+                sys.exit('Could not find real name of teacher \'' + teacher_found_name + '\' (From thesis of period ' + thesis['PERIODO'] + ').\nPlease update the `teachers.csv` file')
 
     for teacher, info in teachers_data.items():
-        info['THESIS'].sort(key = lambda x: thesis_list[x['IDX']]['PERIODO']);
+        info['THESIS'].sort(key = lambda x: thesis_list[x['IDX']]['PERIODO'])
 
-    tutor_curr_period = "";
-    jury_curr_period = "";
-    tutor_doc = Document();
-    jury_doc = Document();
-    p = None;
+    tutor_curr_period = ""
+    jury_curr_period = ""
+    tutor_doc = Document()
+    jury_doc = Document()
+    p = None
 
     for teacher, teacher_info in teachers_data.items():
-        tutor_curr_period = "";
-        jury_curr_period = "";
+        tutor_curr_period = ""
+        jury_curr_period = ""
         for thesis in teacher_info['THESIS']:
-            thesis_data = thesis_list[thesis['IDX']];
+            thesis_data = thesis_list[thesis['IDX']]
             if thesis['TYPE'] == 'tutor':
                 if tutor_curr_period == "":
-                    tutor_doc = Document();
-                    copy_header(globals.DATA_FOLDER, tutor_doc, teacher_info['FULL NAME'], teacher_info['C.I.'], 'TUTOR');
+                    tutor_doc = Document()
+                    copy_header(globals.DATA_FOLDER, tutor_doc, teacher_info['FULL NAME'], teacher_info['C.I.'], 'TUTOR')
                 
                 if thesis_data['PERIODO'] != tutor_curr_period:
-                    tutor_curr_period = thesis_data['PERIODO'];
-                    p = tutor_doc.add_paragraph();
-                    p.style.font.name = 'Arial';
-                    p.style.font.size = Pt(11);
-                    p.paragraph_format.space_after = Pt(20);
+                    tutor_curr_period = thesis_data['PERIODO']
+                    p = tutor_doc.add_paragraph()
+                    p.style.font.name = 'Arial'
+                    p.style.font.size = Pt(11)
+                    p.paragraph_format.space_after = Pt(20)
 
-                    period_run = p.add_run('PERIODO ACADÉMICO ' + tutor_curr_period);
-                    period_run.bold = True;
-                    period_run.italic = True;
+                    period_run = p.add_run('PERIODO ACADÉMICO ' + tutor_curr_period)
+                    period_run.bold = True
+                    period_run.italic = True
 
-                p = tutor_doc.add_paragraph();
+                p = tutor_doc.add_paragraph()
 
             elif thesis['TYPE'] == 'jury':
                 if jury_curr_period == "":
-                    jury_doc = Document();
-                    copy_header(globals.DATA_FOLDER, jury_doc, teacher_info['FULL NAME'], teacher_info['C.I.'], 'JURADO');
+                    jury_doc = Document()
+                    copy_header(globals.DATA_FOLDER, jury_doc, teacher_info['FULL NAME'], teacher_info['C.I.'], 'JURADO')
                 
                 if thesis_data['PERIODO'] != jury_curr_period:
-                    jury_curr_period = thesis_data['PERIODO'];
-                    p = jury_doc.add_paragraph();
+                    jury_curr_period = thesis_data['PERIODO']
+                    p = jury_doc.add_paragraph()
                     
-                    p.style.font.name = 'Arial';
-                    p.style.font.size = Pt(11);
-                    p.paragraph_format.space_after = Pt(20);
+                    p.style.font.name = 'Arial'
+                    p.style.font.size = Pt(11)
+                    p.paragraph_format.space_after = Pt(20)
 
-                    period_run = p.add_run('PERIODO ACADÉMICO ' + jury_curr_period);
-                    period_run.bold = True;
-                    period_run.italic = True;
+                    period_run = p.add_run('PERIODO ACADÉMICO ' + jury_curr_period)
+                    period_run.bold = True
+                    period_run.italic = True
                 
-                p = jury_doc.add_paragraph();
+                p = jury_doc.add_paragraph()
 
             else:
-                sys.exit('[ ERR ] Found unknown thesis type \'' + thesis['TYPE'] + '\' in teacher \'' + teacher + '\' data.');
+                sys.exit('[ ERR ] Found unknown thesis type \'' + thesis['TYPE'] + '\' in teacher \'' + teacher + '\' data.')
 
-            p.style.font.name = 'Arial';
-            p.style.font.size = Pt(11);
-            p.paragraph_format.space_after = Pt(20);
+            p.style.font.name = 'Arial'
+            p.style.font.size = Pt(11)
+            p.paragraph_format.space_after = Pt(20)
 
-            p.add_run('Nombre: ').italic = True;
-            name_run = p.add_run(thesis_data.get('ALUMNO').split('\n')[0].upper() + '\n');
-            name_run.bold = True;
-            name_run.italic = True;
+            p.add_run('Nombre: ').italic = True
+            name_run = p.add_run(thesis_data.get('ALUMNO').split('\n')[0].upper() + '\n')
+            name_run.bold = True
+            name_run.italic = True
 
-            p.add_run('Titulo de T.E.G: ').italic = True;
-            title_run = p.add_run(' '.join(line.strip() for line in thesis_data.get('TITULO DE LA TESIS').split('\n')).upper());
-            title_run.bold = True;
+            p.add_run('Titulo de T.E.G: ').italic = True
+            title_run = p.add_run(' '.join(line.strip() for line in thesis_data.get('TITULO DE LA TESIS').split('\n')).upper())
+            title_run.bold = True
 
-            title_run.italic = True;
+            title_run.italic = True
 
         if tutor_curr_period != "":
-            copy_footer(globals.DATA_FOLDER, tutor_doc, date);
-            tutor_doc.save(globals.DATA_FOLDER + 'out/CONSTANCIA_TUTOR_' + teacher_info['FILENAME'] + '.docx');
+            copy_footer(globals.DATA_FOLDER, tutor_doc, date)
+            tutor_doc.save(globals.DATA_FOLDER + 'out/CONSTANCIA_TUTOR_' + teacher_info['FILENAME'] + '.docx')
 
         if jury_curr_period != "":
-            copy_footer(globals.DATA_FOLDER, jury_doc, date);
-            jury_doc.save(globals.DATA_FOLDER + 'out/CONSTANCIA_JURADO_' + teacher_info['FILENAME'] + '.docx');
+            copy_footer(globals.DATA_FOLDER, jury_doc, date)
+            jury_doc.save(globals.DATA_FOLDER + 'out/CONSTANCIA_JURADO_' + teacher_info['FILENAME'] + '.docx')
 
 elif globals.VERSION == 2:
     from date import get_date
@@ -247,7 +247,30 @@ elif globals.VERSION == 2:
     with tqdm(total=len(verdicts_files), leave = True) as pbar_vrd:
         for verdict in verdicts_files:
             pbar_vrd.set_description(f"Verdict: {verdict}")
-            get_docx_data_2(verdicts_path + verdict, thesis_list)
+            get_docx_data_2(verdicts_path + verdict, thesis_list, '2024-B')
             pbar_vrd.update(1)
+
+    teachers_data = {}
+    with open(globals.DATA_FOLDER + 'in/teachers/teachers.csv', encoding='utf-8') as teachers_file:
+        csv_reader = csv.reader(teachers_file, delimiter=';')
+        for i, row in enumerate(csv_reader):
+            if i >= 2:
+                teacher_name = row[0]
+                ci = row[1]
+                title = row[2]
+                filename = teacher_name.replace(' ', '_').upper()
+                teachers_data[ci] = {'FILENAME':filename, 'FULL NAME':teacher_name, 'C.I.':ci, 'THESIS':[]}
+
+    for idx, thesis in enumerate(thesis_list):
+        for i, ci in enumerate(thesis['JURADO PRINCIPAL']):
+            if i == 0:
+                teachers_data[ci]['THESIS'].append({'IDX':idx, 'TYPE':'tutor'})
+            else:
+                teachers_data[ci]['THESIS'].append({'IDX':idx, 'TYPE':'jury'})
+
+    for teacher, info in teachers_data.items():
+        info['THESIS'].sort(key = lambda x: thesis_list[x['IDX']]['PERIODO'])
+
+    print(teachers_data)
 
 print("Finished execution.");

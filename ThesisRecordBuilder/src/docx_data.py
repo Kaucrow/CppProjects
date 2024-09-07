@@ -40,7 +40,7 @@ def get_docx_data_1(document_path, data, keys):
     
     #pbar.close()
 
-def get_docx_data_2(document_path, data):
+def get_docx_data_2(document_path, data, period):
     if not hasattr(get_docx_data_2, 'thesis_count'):
         get_docx_data_2.thesis_count = 0
 
@@ -60,6 +60,7 @@ def get_docx_data_2(document_path, data):
             raise Exception(f'Error in main paragraph of thesis in document (delimiter not found): {document_path}')
 
     thesis = {}
+
     for paragraph in document.paragraphs:
         paragraph = paragraph.text.strip()
         if not paragraph == '':
@@ -113,6 +114,7 @@ def get_docx_data_2(document_path, data):
                     thesis['CALIFICACION'] = paragraph[start_idx:end_idx].strip()
 
                 case 2:
+                    # Thesis date
                     start_idx = paragraph.find('a los')
                     check_idx(start_idx)
                     start_idx += len('a los')
@@ -120,6 +122,7 @@ def get_docx_data_2(document_path, data):
                     check_idx(end_idx)
                     thesis['FECHA DE DEFENSA'] = get_date(paragraph[start_idx:end_idx].strip())
 
+                    # Thesis teachers (Tutor and jury)
                     teachers = []
                     ci_texts = []
                     older_ci = ''
@@ -160,6 +163,8 @@ def get_docx_data_2(document_path, data):
                     paragraph_num = 0
 
                     thesis['JURADO PRINCIPAL'] = teachers
+                    thesis['PERIODO'] = period
+
                     data.append(thesis)
 
                     get_docx_data_2.thesis_count += 1
