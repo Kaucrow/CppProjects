@@ -40,7 +40,7 @@ def get_docx_data_1(document_path, data, keys):
     
     #pbar.close()
 
-def get_docx_data_2(document_path, data, period):
+def get_docx_data_2(document_path, data):
     if not hasattr(get_docx_data_2, 'thesis_count'):
         get_docx_data_2.thesis_count = 0
 
@@ -55,9 +55,9 @@ def get_docx_data_2(document_path, data, period):
 
     paragraph_num = 0
 
-    def check_idx(idx):
+    def check_idx(idx, delimiter):
         if idx == -1:
-            raise Exception(f'Error in main paragraph of thesis in document (delimiter not found): {document_path}')
+            raise Exception(f'Error in main paragraph of thesis in document (delimiter `{delimiter}` not found): {document_path}')
 
     thesis = {}
 
@@ -71,10 +71,15 @@ def get_docx_data_2(document_path, data, period):
 
                     # Thesis name
                     start_idx = searchable.find('especial:')
-                    check_idx(start_idx)
-                    start_idx += len('especial:')
+                    try:
+                        check_idx(start_idx, 'especial:')
+                        start_idx += len('especial:')
+                    except Exception:
+                        start_idx = searchable.find('grado:')
+                        check_idx(start_idx, 'grado:')
+                        start_idx += len('grado:')
                     end_idx = searchable.find('que', start_idx)
-                    check_idx(end_idx)
+                    check_idx(end_idx, 'que')
                     thesis_name = paragraph[start_idx:end_idx].strip()
                     thesis['TITULO DE LA TESIS'] = thesis_name
                     searchable = searchable[end_idx:]
@@ -82,10 +87,10 @@ def get_docx_data_2(document_path, data, period):
 
                     # Student name
                     start_idx = searchable.find('bachiller:')
-                    check_idx(start_idx)
+                    check_idx(start_idx, 'bachiller:')
                     start_idx += len('bachiller:')
                     end_idx = searchable.find('titular', start_idx)
-                    check_idx(end_idx)
+                    check_idx(end_idx, 'titular')
                     student = paragraph[start_idx:end_idx].strip()
                     thesis['ALUMNO'] = student
                     searchable = searchable[end_idx:]
@@ -93,79 +98,86 @@ def get_docx_data_2(document_path, data, period):
 
                     # C.I.
                     start_idx = searchable.find('v-')
-                    check_idx(start_idx)
-                    start_idx += len('v-')
+                    try:
+                        check_idx(start_idx, 'v-')
+                        start_idx += len('v-')
+                    except Exception:
+                        start_idx = searchable.find('v -')
+                        check_idx(start_idx, 'v -')
+                        start_idx += len ('v -')
                     substr = searchable[start_idx:]
                     match = re.search(r'[^0-9.]', substr.strip())
                     if match:
                         end_idx = match.start()
                     else:
-                        check_idx(-1)
+                        check_idx(-1, None)
                     thesis['C.I.'] = substr[:end_idx + 1].strip()
                     searchable = searchable[end_idx:]
                     paragraph = paragraph[end_idx:]
 
                     # Grade
                     start_idx = searchable.find('(')
-                    check_idx(start_idx)
+                    check_idx(start_idx, '(')
                     start_idx += len('(')
                     end_idx = searchable.find(')')
-                    check_idx(end_idx)
+                    check_idx(end_idx, ')')
                     thesis['CALIFICACION'] = paragraph[start_idx:end_idx].strip()
 
                 case 2:
                     # Thesis date
                     start_idx = paragraph.find('a los')
-                    check_idx(start_idx)
+                    check_idx(start_idx, 'a los')
                     start_idx += len('a los')
                     end_idx = paragraph.find('.')
-                    check_idx(end_idx)
+                    check_idx(end_idx, '.')
                     thesis['FECHA DE DEFENSA'] = get_date(paragraph[start_idx:end_idx].strip())
+                    path = document_path
+                    period = path[path[:path.rfind('/')].rfind('/') + 1:path.rfind('/')]
+                    thesis['PERIODO'] = period
+
+                    if period in ['2022-A','2022-B','2022-C']:
+                        table = document.tables[0]
+                        for row_idx, row in enumerate(table.rows):
+                            for cell_idx, cell in enumerate(row.cells):
+                                cell_text = cell.text.strip()
+                                print(cell_text)
+                        exit(0)
 
                     # Thesis teachers (Tutor and jury)
-                    print('-------------------------------')
                     teachers = []
                     ci_texts = []
-                    older_ci = ''
                     last_ci = ''
-                    repeated = False
-                    for i in range(10):
+                    curr_ci = ''
+                    for i in range(5):
                         textbox_texts = textboxes[textbox_idx + i].xpath('.//w:t/text()', namespaces=root.nsmap)
                         for text in textbox_texts:
-                            print(text)
-                            if text[0].isdigit():
-                                ci_texts.append(text)
-                            elif ci_texts and text[0] == '.':
-                                ci_texts.append(text)
-                            elif ci_texts:
-                                if last_ci:
-                                    older_ci = last_ci
-                                last_ci = ''.join(ci_texts)
-                                if older_ci:
-                                    if older_ci == last_ci:
-                                        if not repeated:
-                                            repeated = True
-                                        else:
-                                            raise Exception('Found three repeated textboxes')
-                                    else:
-                                        if repeated:
-                                            repeated = False
-                                        else:
-                                            raise Exception('Found no textbox repetition')
-
-                                ci_texts = []
-
-                            if repeated == False:
+                            if curr_ci:
                                 if text == 'TUTOR':
                                     teachers.insert(0, last_ci)
                                 elif text == 'JURADO':
                                     teachers.append(last_ci)
 
-                    textbox_idx += 10
+                                last_ci = curr_ci
+                                curr_ci = ''
+
+                            print(text)
+
+                            if text[0].isdigit():
+                                ci_texts.append(text)
+                            elif ci_texts and text[0] == '.':
+                                ci_texts.append(text)
+                            elif ci_texts:
+                                curr_ci = ''.join(ci_texts)
+
+                                if last_ci == curr_ci:
+                                    raise Exception('Found repeated textboxes')
+
+                                ci_texts = []
+
+                    textbox_idx += 5
                     paragraph_num = 0
 
                     thesis['JURADO PRINCIPAL'] = teachers
-                    thesis['PERIODO'] = period
 
                     data.append(thesis)
 
