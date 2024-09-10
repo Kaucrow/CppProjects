@@ -5,6 +5,7 @@ import csv
 from tqdm import tqdm, trange
 from format_copy import *
 from docx_data import *
+from misc import num_to_str
 from verdicts_data import get_verdicts_data, display
 from docx.api import Document
 
@@ -83,6 +84,7 @@ if not runver_provided:
 print(f'Run version set to: {globals.VERSION}')
 
 thesis_list = []
+teachers_data = {}
 
 if globals.VERSION == 1:
     try:
@@ -91,7 +93,6 @@ if globals.VERSION == 1:
         pass
 
     teachers_names = {}
-    teachers_data = {}
 
     with open(globals.DATA_FOLDER + 'in/teachers/teachers.csv', encoding='utf-8') as teachers_file:
         csv_reader = csv.reader(teachers_file, delimiter=';')
@@ -145,8 +146,6 @@ if globals.VERSION == 1:
     filename = '';
     curr_period = None
 
-    date = input("Elaboration date (for footer): ");
-
     for i in range(3):
         for idx, thesis in enumerate(thesis_list):
             teacher_found_name = thesis['JURADO PRINCIPAL'].split('\n')[i].replace('Arq.', '').strip()
@@ -162,83 +161,7 @@ if globals.VERSION == 1:
     for teacher, info in teachers_data.items():
         info['THESIS'].sort(key = lambda x: thesis_list[x['IDX']]['PERIODO'])
 
-    tutor_curr_period = ""
-    jury_curr_period = ""
-    tutor_doc = Document()
-    jury_doc = Document()
-    p = None
-
-    for teacher, teacher_info in teachers_data.items():
-        tutor_curr_period = ""
-        jury_curr_period = ""
-        for thesis in teacher_info['THESIS']:
-            thesis_data = thesis_list[thesis['IDX']]
-            if thesis['TYPE'] == 'tutor':
-                if tutor_curr_period == "":
-                    tutor_doc = Document()
-                    copy_header(globals.DATA_FOLDER, tutor_doc, teacher_info['FULL NAME'], teacher_info['C.I.'], 'TUTOR')
-                
-                if thesis_data['PERIODO'] != tutor_curr_period:
-                    tutor_curr_period = thesis_data['PERIODO']
-                    p = tutor_doc.add_paragraph()
-                    p.style.font.name = 'Arial'
-                    p.style.font.size = Pt(11)
-                    p.paragraph_format.space_after = Pt(20)
-
-                    period_run = p.add_run('PERIODO ACADÉMICO ' + tutor_curr_period)
-                    period_run.bold = True
-                    period_run.italic = True
-
-                p = tutor_doc.add_paragraph()
-
-            elif thesis['TYPE'] == 'jury':
-                if jury_curr_period == "":
-                    jury_doc = Document()
-                    copy_header(globals.DATA_FOLDER, jury_doc, teacher_info['FULL NAME'], teacher_info['C.I.'], 'JURADO')
-                
-                if thesis_data['PERIODO'] != jury_curr_period:
-                    jury_curr_period = thesis_data['PERIODO']
-                    p = jury_doc.add_paragraph()
-                    
-                    p.style.font.name = 'Arial'
-                    p.style.font.size = Pt(11)
-                    p.paragraph_format.space_after = Pt(20)
-
-                    period_run = p.add_run('PERIODO ACADÉMICO ' + jury_curr_period)
-                    period_run.bold = True
-                    period_run.italic = True
-                
-                p = jury_doc.add_paragraph()
-
-            else:
-                sys.exit('[ ERR ] Found unknown thesis type \'' + thesis['TYPE'] + '\' in teacher \'' + teacher + '\' data.')
-
-            p.style.font.name = 'Arial'
-            p.style.font.size = Pt(11)
-            p.paragraph_format.space_after = Pt(20)
-
-            p.add_run('Nombre: ').italic = True
-            name_run = p.add_run(thesis_data.get('ALUMNO').split('\n')[0].upper() + '\n')
-            name_run.bold = True
-            name_run.italic = True
-
-            p.add_run('Titulo de T.E.G: ').italic = True
-            title_run = p.add_run(' '.join(line.strip() for line in thesis_data.get('TITULO DE LA TESIS').split('\n')).upper())
-            title_run.bold = True
-
-            title_run.italic = True
-
-        if tutor_curr_period != "":
-            copy_footer(globals.DATA_FOLDER, tutor_doc, date)
-            tutor_doc.save(globals.DATA_FOLDER + 'out/CONSTANCIA_TUTOR_' + teacher_info['FILENAME'] + '.docx')
-
-        if jury_curr_period != "":
-            copy_footer(globals.DATA_FOLDER, jury_doc, date)
-            jury_doc.save(globals.DATA_FOLDER + 'out/CONSTANCIA_JURADO_' + teacher_info['FILENAME'] + '.docx')
-
 elif globals.VERSION == 2:
-    from date import get_date
-
     verdicts_path = globals.DATA_FOLDER + 'in/verdicts/'
     verdicts_files = os.listdir(verdicts_path)
 
@@ -250,7 +173,6 @@ elif globals.VERSION == 2:
             get_docx_data_2(verdicts_path + verdict, thesis_list, '2024-B')
             pbar_vrd.update(1)
 
-    teachers_data = {}
     with open(globals.DATA_FOLDER + 'in/teachers/teachers.csv', encoding='utf-8') as teachers_file:
         csv_reader = csv.reader(teachers_file, delimiter=';')
         for i, row in enumerate(csv_reader):
@@ -271,6 +193,89 @@ elif globals.VERSION == 2:
     for teacher, info in teachers_data.items():
         info['THESIS'].sort(key = lambda x: thesis_list[x['IDX']]['PERIODO'])
 
-    print(teachers_data)
+tutor_curr_period = ""
+jury_curr_period = ""
+tutor_doc = Document()
+jury_doc = Document()
+p = None
+
+date = input("Elaboration date (for footer): ");
+
+for teacher, teacher_info in teachers_data.items():
+    tutor_curr_period = ""
+    jury_curr_period = ""
+    for thesis in teacher_info['THESIS']:
+        thesis_data = thesis_list[thesis['IDX']]
+        if thesis['TYPE'] == 'tutor':
+            if tutor_curr_period == "":
+                tutor_doc = Document()
+                copy_header(globals.DATA_FOLDER, tutor_doc, teacher_info['FULL NAME'], teacher_info['C.I.'], 'TUTOR')
+            
+            if thesis_data['PERIODO'] != tutor_curr_period:
+                tutor_curr_period = thesis_data['PERIODO']
+                p = tutor_doc.add_paragraph()
+                p.style.font.name = 'Arial'
+                p.style.font.size = Pt(11)
+                p.paragraph_format.space_after = Pt(20)
+
+                period_run = p.add_run('PERIODO ACADÉMICO ' + tutor_curr_period)
+                period_run.bold = True
+                period_run.italic = True
+
+            p = tutor_doc.add_paragraph()
+
+        elif thesis['TYPE'] == 'jury':
+            if jury_curr_period == "":
+                jury_doc = Document()
+                copy_header(globals.DATA_FOLDER, jury_doc, teacher_info['FULL NAME'], teacher_info['C.I.'], 'JURADO')
+            
+            if thesis_data['PERIODO'] != jury_curr_period:
+                jury_curr_period = thesis_data['PERIODO']
+                p = jury_doc.add_paragraph()
+                
+                p.style.font.name = 'Arial'
+                p.style.font.size = Pt(11)
+                p.paragraph_format.space_after = Pt(20)
+
+                period_run = p.add_run('PERIODO ACADÉMICO ' + jury_curr_period)
+                period_run.bold = True
+                period_run.italic = True
+            
+            p = jury_doc.add_paragraph()
+
+        else:
+            sys.exit('[ ERR ] Found unknown thesis type \'' + thesis['TYPE'] + '\' in teacher \'' + teacher + '\' data.')
+
+        p.style.font.name = 'Arial'
+        p.style.font.size = Pt(11)
+        p.paragraph_format.space_after = Pt(20)
+
+        p.add_run('Nombre: ').italic = True
+        name_run = p.add_run(thesis_data.get('ALUMNO').split('\n')[0].upper() + '\n')
+        name_run.bold = True
+        name_run.italic = True
+
+        p.add_run('Titulo de T.E.G: ').italic = True
+        title_run = p.add_run(' '.join(line.strip() for line in thesis_data.get('TITULO DE LA TESIS').split('\n')).upper() + '\n')
+        title_run.bold = True
+        title_run.italic = True
+
+        p.add_run('Calificado: ').italic = True
+        grade_run = p.add_run(num_to_str(thesis_data.get('CALIFICACION')).upper() + ' PUNTOS (' + thesis_data.get('CALIFICACION') + ')' + '\n')
+        grade_run.bold = True
+        grade_run.italic = True
+
+        p.add_run('Fecha de Aprobación: ').italic = True
+        date_run = p.add_run(thesis_data.get('FECHA DE DEFENSA'))
+        date_run.bold = True
+        date_run.italic = True
+
+    if tutor_curr_period != "":
+        copy_footer(globals.DATA_FOLDER, tutor_doc, date)
+        tutor_doc.save(globals.DATA_FOLDER + 'out/CONSTANCIA_TUTOR_' + teacher_info['FILENAME'] + '.docx')
+
+    if jury_curr_period != "":
+        copy_footer(globals.DATA_FOLDER, jury_doc, date)
+        jury_doc.save(globals.DATA_FOLDER + 'out/CONSTANCIA_JURADO_' + teacher_info['FILENAME'] + '.docx')
 
 print("Finished execution.");
