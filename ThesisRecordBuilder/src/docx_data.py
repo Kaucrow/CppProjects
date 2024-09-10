@@ -123,6 +123,7 @@ def get_docx_data_2(document_path, data, period):
                     thesis['FECHA DE DEFENSA'] = get_date(paragraph[start_idx:end_idx].strip())
 
                     # Thesis teachers (Tutor and jury)
+                    print('-------------------------------')
                     teachers = []
                     ci_texts = []
                     older_ci = ''
@@ -131,6 +132,7 @@ def get_docx_data_2(document_path, data, period):
                     for i in range(10):
                         textbox_texts = textboxes[textbox_idx + i].xpath('.//w:t/text()', namespaces=root.nsmap)
                         for text in textbox_texts:
+                            print(text)
                             if text[0].isdigit():
                                 ci_texts.append(text)
                             elif ci_texts and text[0] == '.':

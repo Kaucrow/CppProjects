@@ -172,7 +172,7 @@ elif globals.VERSION == 2:
         with tqdm(total=len(verdicts_files), leave = True) as pbar_vrd:
             for verdict in verdicts_files:
                 pbar_vrd.set_description(f"Verdict: {verdict}")
-                get_docx_data_2(verdicts_path + folder + verdict, thesis_list, '2024-B')
+                get_docx_data_2(verdicts_path + folder + '/' + verdict, thesis_list, '2024-B')
                 pbar_vrd.update(1)
 
         with open(globals.DATA_FOLDER + 'in/teachers/teachers.csv', encoding='utf-8') as teachers_file:
