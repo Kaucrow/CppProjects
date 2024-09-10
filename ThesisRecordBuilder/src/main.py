@@ -163,35 +163,39 @@ if globals.VERSION == 1:
 
 elif globals.VERSION == 2:
     verdicts_path = globals.DATA_FOLDER + 'in/verdicts/'
-    verdicts_files = os.listdir(verdicts_path)
+    verdicts_folders = os.listdir(verdicts_path)
+    for folder in verdicts_folders:
+        verdicts_files = os.listdir(verdicts_path + folder)
 
-    print('Collecting data...')
+        print('Collecting data...')
 
-    with tqdm(total=len(verdicts_files), leave = True) as pbar_vrd:
-        for verdict in verdicts_files:
-            pbar_vrd.set_description(f"Verdict: {verdict}")
-            get_docx_data_2(verdicts_path + verdict, thesis_list, '2024-B')
-            pbar_vrd.update(1)
+        with tqdm(total=len(verdicts_files), leave = True) as pbar_vrd:
+            for verdict in verdicts_files:
+                pbar_vrd.set_description(f"Verdict: {verdict}")
+                get_docx_data_2(verdicts_path + folder + verdict, thesis_list, '2024-B')
+                pbar_vrd.update(1)
 
-    with open(globals.DATA_FOLDER + 'in/teachers/teachers.csv', encoding='utf-8') as teachers_file:
-        csv_reader = csv.reader(teachers_file, delimiter=';')
-        for i, row in enumerate(csv_reader):
-            if i >= 2:
-                teacher_name = row[0]
-                ci = row[1]
-                title = row[2]
-                filename = teacher_name.replace(' ', '_').upper()
-                teachers_data[ci] = {'FILENAME':filename, 'FULL NAME':teacher_name, 'C.I.':ci, 'THESIS':[]}
+        with open(globals.DATA_FOLDER + 'in/teachers/teachers.csv', encoding='utf-8') as teachers_file:
+            csv_reader = csv.reader(teachers_file, delimiter=';')
+            for i, row in enumerate(csv_reader):
+                if i >= 2:
+                    teacher_name = row[0]
+                    ci = row[1]
+                    title = row[2]
+                    filename = teacher_name.replace(' ', '_').upper()
+                    teachers_data[ci] = {'FILENAME':filename, 'FULL NAME':teacher_name, 'C.I.':ci, 'THESIS':[]}
 
-    for idx, thesis in enumerate(thesis_list):
-        for i, ci in enumerate(thesis['JURADO PRINCIPAL']):
-            if i == 0:
-                teachers_data[ci]['THESIS'].append({'IDX':idx, 'TYPE':'tutor'})
-            else:
-                teachers_data[ci]['THESIS'].append({'IDX':idx, 'TYPE':'jury'})
+        for idx, thesis in enumerate(thesis_list):
+            for i, ci in enumerate(thesis['JURADO PRINCIPAL']):
+                if ci not in teachers_data:
+                    raise Exception(f'Error: could not find teacher with C.I. {ci} in teachers.csv')
+                if i == 0:
+                    teachers_data[ci]['THESIS'].append({'IDX':idx, 'TYPE':'tutor'})
+                else:
+                    teachers_data[ci]['THESIS'].append({'IDX':idx, 'TYPE':'jury'})
 
-    for teacher, info in teachers_data.items():
-        info['THESIS'].sort(key = lambda x: thesis_list[x['IDX']]['PERIODO'])
+        for teacher, info in teachers_data.items():
+            info['THESIS'].sort(key = lambda x: thesis_list[x['IDX']]['PERIODO'])
 
 tutor_curr_period = ""
 jury_curr_period = ""
