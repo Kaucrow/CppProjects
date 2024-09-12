@@ -167,12 +167,13 @@ elif globals.VERSION == 2:
     for folder in verdicts_folders:
         verdicts_files = os.listdir(verdicts_path + folder)
 
-        print('Collecting data...')
+        print(f'Collecting data (Period {folder})...')
 
         with tqdm(total=len(verdicts_files), leave = True) as pbar_vrd:
+            period = folder
             for verdict in verdicts_files:
                 pbar_vrd.set_description(f"Verdict: {verdict}")
-                get_docx_data_2(verdicts_path + folder + '/' + verdict, thesis_list)
+                get_docx_data_2(verdicts_path + folder + '/' + verdict, thesis_list, period, globals)
                 pbar_vrd.update(1)
 
         with open(globals.DATA_FOLDER + 'in/teachers/teachers.csv', encoding='utf-8') as teachers_file:
@@ -188,14 +189,14 @@ elif globals.VERSION == 2:
         for idx, thesis in enumerate(thesis_list):
             for i, ci in enumerate(thesis['JURADO PRINCIPAL']):
                 if ci not in teachers_data:
-                    raise Exception(f'Error: could not find teacher with C.I. {ci} in teachers.csv')
+                    raise Exception(f'Error: could not find teacher with C.I. {ci} in teachers.csv, from thesis of student {thesis['ALUMNO']} from period {thesis['PERIODO']}')
                 if i == 0:
                     teachers_data[ci]['THESIS'].append({'IDX':idx, 'TYPE':'tutor'})
                 else:
                     teachers_data[ci]['THESIS'].append({'IDX':idx, 'TYPE':'jury'})
 
-        for teacher, info in teachers_data.items():
-            info['THESIS'].sort(key = lambda x: thesis_list[x['IDX']]['PERIODO'])
+    for teacher, info in teachers_data.items():
+        info['THESIS'].sort(key = lambda x: thesis_list[x['IDX']]['PERIODO'])
 
 tutor_curr_period = ""
 jury_curr_period = ""
