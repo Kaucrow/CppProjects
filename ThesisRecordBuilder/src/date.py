@@ -1,7 +1,7 @@
 DICT = {
     'un':'1','dos':'2','tres':'3','cuatro':'4','cinco':'5','seis':'6','siete':'7','ocho':'8','nueve':'9',
     'diez':'10','once':'11','doce':'12','trece':'13','catorce':'14','quince':'15','dieciseis':'16','dieciséis':'16','diecisiete':'17','dieciocho':'18','diecinueve':'19',
-    'veinte':'20','veintiuno':'21','veintiún':'21','veintidos':'22','veintidós':'22','veintitres':'23','veinticuatro':'24','veinticinco':'25','veintiseis':'26','veintisiete':'27','veintiocho':'28','veintinueve':'29',
+    'veinte':'20','veintiuno':'21','veintiún':'21','veintidos':'22','veintidós':'22','veintitres':'23','veintitrés':'23','veinticuatro':'24','veinticinco':'25','veintiseis':'26','veintisiete':'27','veintiocho':'28','veintinueve':'29',
     'treinta':'30',
     'cuarenta':'40',
     'cincuenta':'50',
@@ -75,14 +75,20 @@ M_DICT = {
 }
 
 # Example str: 'quince días del mes de enero del año dos mil veintiuno'
-def get_date(strn):
+# Example str (new format): 'quince (15) días del mes de enero del dos mil veintiuno'
+def get_date(strn, period):
     exc = Exception(f'Error: delimiter not found. Malformed str: `{strn}`')
     converted = ''
 
     # Day
-    end_idx = strn.find('días')
+    if period in ['2023','2024-A','2024-B']:
+        end_idx = strn.find('(')
+    else:
+        end_idx = strn.find('días')
+
     if end_idx == -1:
         raise exc
+
     converted += str_to_num(strn[:end_idx].strip()) + '/'
 
     # Month
@@ -90,7 +96,12 @@ def get_date(strn):
     if start_idx == -1:
         raise exc
     start_idx += len('mes de')
-    end_idx = strn.find('del año')
+    if period in ['2023','2024-A']:
+        end_idx = strn.rfind('del')
+    elif period == '2024-B':
+        end_idx = strn.rfind('de')
+    else:
+        end_idx = strn.find('del año')
     if end_idx == -1:
         raise exc
 
@@ -101,7 +112,12 @@ def get_date(strn):
         raise Exception(f'Error: month not found in month dictionary. Malformed str: `{strn}`')
 
     # Year
-    start_idx = end_idx + len('del año')
+    if period in ['2023','2024-A']:
+        start_idx = end_idx + len('del')
+    elif period == '2024-B':
+        start_idx = end_idx + len('de')
+    else:
+        start_idx = end_idx + len('del año')
     converted += str_to_num(strn[start_idx:].strip())
 
     return converted

@@ -210,6 +210,7 @@ for teacher, teacher_info in teachers_data.items():
     tutor_curr_period = ""
     jury_curr_period = ""
     for thesis in teacher_info['THESIS']:
+        print(thesis_list[thesis['IDX']]['PERIODO'])
         thesis_data = thesis_list[thesis['IDX']]
         if thesis['TYPE'] == 'tutor':
             if tutor_curr_period == "":
@@ -265,10 +266,11 @@ for teacher, teacher_info in teachers_data.items():
         title_run.bold = True
         title_run.italic = True
 
-        p.add_run('Calificado: ').italic = True
-        grade_run = p.add_run(num_to_str(thesis_data.get('CALIFICACION')).upper() + ' PUNTOS (' + thesis_data.get('CALIFICACION') + ')' + '\n')
-        grade_run.bold = True
-        grade_run.italic = True
+        if thesis_data.get('CALIFICACION'):
+            p.add_run('Calificado: ').italic = True
+            grade_run = p.add_run(num_to_str(thesis_data.get('CALIFICACION')).upper() + ' PUNTOS (' + thesis_data.get('CALIFICACION') + ')' + '\n')
+            grade_run.bold = True
+            grade_run.italic = True
 
         p.add_run('Fecha de Aprobación: ').italic = True
         date_run = p.add_run(thesis_data.get('FECHA DE DEFENSA'))
