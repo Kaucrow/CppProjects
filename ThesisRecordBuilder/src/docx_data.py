@@ -115,6 +115,8 @@ def get_docx_data_2(document_path, data, period, globals):
                     end_idx = searchable.find('titular', start_idx)
                     check_idx(end_idx, 'titular')
                 student = paragraph[start_idx:end_idx].strip()
+                if student[len(student) - 1] == ',':
+                    student = student[:-1]
                 thesis['ALUMNO'] = student
                 searchable = searchable[end_idx:]
                 paragraph = paragraph[end_idx:]
@@ -264,6 +266,34 @@ def get_docx_data_2(document_path, data, period, globals):
                     for i in range(5):
                         textbox_texts = textboxes[textbox_idx + i].xpath('.//w:t/text()', namespaces=root.nsmap)
                         for text in textbox_texts:
+                            if not curr_ci:
+                                if text[0].isdigit():
+                                    ci_texts.append(text)
+                                elif ci_texts and text[0] == '.':
+                                    ci_texts.append(text)
+                                elif ci_texts:
+                                    curr_ci = ''.join(ci_texts).strip()
+
+                                    match curr_ci:
+                                        case '18.006.498':
+                                            curr_ci = '18.006.948'
+                                        case '18.006.998':
+                                            curr_ci = '18.006.948'
+                                        case '9.765.247':
+                                            curr_ci = '9.765.274'
+                                        case '10.432.608':
+                                            curr_ci = '10.432.808'
+                                        case '11.294.860':
+                                            curr_ci = '11.294.800'
+                                        case '11.294.900':
+                                            curr_ci = '11.294.800'
+                                        case '12.661.224':
+                                            curr_ci = '12.621.224'
+
+                                    if last_ci == curr_ci:
+                                        raise Exception('Found repeated textboxes')
+                                    ci_texts = []
+
                             if curr_ci:
                                 if text == 'TUTOR':
                                     teachers.insert(0, curr_ci)
@@ -276,19 +306,7 @@ def get_docx_data_2(document_path, data, period, globals):
 
                             if globals.DEBUG:
                                 print(text)
-
-                            if text[0].isdigit():
-                                ci_texts.append(text)
-                            elif ci_texts and text[0] == '.':
-                                ci_texts.append(text)
-                            elif ci_texts:
-                                curr_ci = ''.join(ci_texts)
-
-                                if last_ci == curr_ci:
-                                    raise Exception('Found repeated textboxes')
-
-                                ci_texts = []
-
+                            
                     textbox_idx += 5
 
                 paragraph_num = 0
@@ -296,10 +314,6 @@ def get_docx_data_2(document_path, data, period, globals):
                 thesis['JURADO PRINCIPAL'] = teachers
 
                 data.append(thesis)
-
-                if thesis['PERIODO'] == '2017-C':
-                    print(teachers)
-                    print('AAAAAAAAAAAAAAAAAAa')
 
                 get_docx_data_2.thesis_count += 1
 

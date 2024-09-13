@@ -175,6 +175,16 @@ elif globals.VERSION == 2:
                 pbar_vrd.set_description(f"Verdict: {verdict}")
                 get_docx_data_2(verdicts_path + folder + '/' + verdict, thesis_list, period, globals)
                 pbar_vrd.update(1)
+        
+        # Remove duplicate thesis
+        seen = set()
+        result = []
+        for thesis in thesis_list:
+            ci = thesis.get('C.I.')
+            if ci not in seen:
+                seen.add(ci)
+                result.append(thesis)
+        thesis_list = result
 
         with open(globals.DATA_FOLDER + 'in/teachers/teachers.csv', encoding='utf-8') as teachers_file:
             csv_reader = csv.reader(teachers_file, delimiter=';')
@@ -210,7 +220,6 @@ for teacher, teacher_info in teachers_data.items():
     tutor_curr_period = ""
     jury_curr_period = ""
     for thesis in teacher_info['THESIS']:
-        print(thesis_list[thesis['IDX']]['PERIODO'])
         thesis_data = thesis_list[thesis['IDX']]
         if thesis['TYPE'] == 'tutor':
             if tutor_curr_period == "":
