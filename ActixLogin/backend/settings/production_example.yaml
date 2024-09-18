@@ -1,0 +1,17 @@
+# settings/production.yaml
+
+application:
+  protocol: https
+  host: 0.0.0.0
+  base_url: ""
+
+debug: false
+
+secret:
+  # 256 bit encryption key https://acte.ltd/utils/randomkeygen
+  secret_key: ""
+  token_expiration: 15
+  # HMAC secret
+  hmac_secret: ""
+
+frontend_url: "https://localhost:3000"
