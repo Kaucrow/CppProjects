@@ -14,7 +14,7 @@ use pasetors::{
 };
 
 /// Store the session key prefix as a const so it can't be typo'd anywhere it's used.
-const SESSION_KEY_PREFIX: &str = "valid_session_key_for_{}";
+const SESSION_KEY_PREFIX: &str = "valid_session_key_for_";
 
 /// Issues a pasetor token to a user. The token has the user's id encoded.
 /// A session_key is also encoded. This key is used to destroy the token
@@ -107,4 +107,76 @@ pub async fn issue_confirmation_token_pasetors(
         Some(settings.secret.hmac_secret.as_bytes()),
     )
     .unwrap())
+}
+
+/// Verifies and destroys a token. A token is destroyed immediately after
+/// it has successfully been verified and all encoded data extracted.
+/// Redis is used for such destruction.
+#[tracing::instrument(name = "Verify pasetors token", skip(token, redis_connection))]
+pub async fn verify_confirmation_token_pasetors(
+    token: String,
+    redis_connection: &mut deadpool_redis::redis::aio::MultiplexedConnection,
+    is_password: Option<bool>
+) -> Result<crate::types::ConfirmationToken, String> {
+    let settings = crate::settings::get_settings().expect("Cannot read settings.");
+    let sk = SymmetricKey::<V4>::from(settings.secret.secret_key.as_bytes()).unwrap();
+
+    let validation_rules = ClaimsValidationRules::new();
+    let untrusted_token = UntrustedToken::<Local, V4>::try_from(&token)
+        .map_err(|e| format!("TokenValidation: {}", e))?;
+    let trusted_token = local::decrypt(
+        &sk,
+        &untrusted_token,
+        &validation_rules,
+        None,
+        Some(settings.secret.hmac_secret.as_bytes()),
+    )
+    .map_err(|e| format!("Pasetor: {}", e))?;
+
+    let claims = trusted_token.payload_claims().unwrap();
+
+    let uid = serde_json::to_value(claims.get_claim("user_id").unwrap()).unwrap();
+
+    match serde_json::from_value::<String>(uid) {
+        Ok(uuid_string) => match uuid::Uuid::parse_str(&uuid_string) {
+            Ok(user_uuid) => {
+                let sss_key =
+                    // convert to serde value to be able to get the session key from the value
+                    serde_json::to_value(claims.get_claim("session_key").unwrap()).unwrap();
+                let session_key = match serde_json::from_value::<String>(sss_key) {
+                    Ok(session_key) => session_key,
+                    Err(e) => return Err(format!("{}", e)),
+                };
+
+                let redis_key = {
+                    if is_password.is_some() {
+                        format!(
+                            "{}{}is_for_password_change",
+                            SESSION_KEY_PREFIX, session_key
+                        )
+                    } else {
+                        format!("{}{}", SESSION_KEY_PREFIX, session_key)
+                    }
+                };
+
+                if redis_connection
+                    .get::<_, Option<String>>(redis_key.clone())
+                    .await
+                    .map_err(|e| format!("{}", e))?
+                    .is_none()
+                {
+                    return Err("Token has been used or expired.".to_string())
+                }
+
+                redis_connection
+                    .del(redis_key.clone())
+                    .await
+                    .map_err(|e| format!("{}", e))?;
+
+                Ok(crate::types::ConfirmationToken { user_id: user_uuid })
+            }
+            Err(e) => Err(format!("{}", e)),
+        },
+        Err(e) => Err(format!("{}", e)),
+    }
 }
