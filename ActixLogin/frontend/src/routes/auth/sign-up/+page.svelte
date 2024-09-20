@@ -2,7 +2,7 @@
     export let data;
 
     import { post } from '$lib/utils/requests/post.requests';
-    import { API_URI } from '$lib/utils/constant'
+    import { API_URI } from '$lib/utils/constant';
 
     let email = '';
     let password = '';
