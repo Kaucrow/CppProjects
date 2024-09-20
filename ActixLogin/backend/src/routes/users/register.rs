@@ -7,8 +7,9 @@ use crate::{
     },
     database::insert_created_user_into_db,
     types::{
-        users::NewUser,
-        common::{SuccessResponse, ErrorResponse},
+        NewUser,
+        SuccessResponse,
+        ErrorResponse,
     },
 };
 
