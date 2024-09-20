@@ -1,5 +1,4 @@
 use argon2::password_hash::rand_core::{OsRng, RngCore};
-use tracing_subscriber::fmt::time;
 use core::convert::TryFrom;
 use deadpool_redis::redis::AsyncCommands;
 use hex;
@@ -51,7 +50,7 @@ pub async fn issue_confirmation_token_pasetors(
     };
 
     redis_connection
-        .set(
+        .set::<_, _, ()>(
             redis_key.clone(),
             // since we only validate that the key exists
             // to indicate the session is "live", it can have any value
@@ -77,7 +76,7 @@ pub async fn issue_confirmation_token_pasetors(
     let dt = current_date_time + time_to_live;
 
     redis_connection
-        .expire(
+        .expire::<_, ()>(
             redis_key.clone(),
             time_to_live.num_seconds().try_into().unwrap()
         )
@@ -169,7 +168,7 @@ pub async fn verify_confirmation_token_pasetors(
                 }
 
                 redis_connection
-                    .del(redis_key.clone())
+                    .del::<_, ()>(redis_key.clone())
                     .await
                     .map_err(|e| format!("{}", e))?;
 
