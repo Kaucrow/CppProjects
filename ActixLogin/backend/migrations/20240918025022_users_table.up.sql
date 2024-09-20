@@ -3,14 +3,13 @@
 -- User table
 CREATE TABLE IF NOT EXISTS users (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-    email TEXT NOT NULL UNIQUE,
-    password TEXT NOT NULL,
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
+    email VARCHAR(320) NOT NULL UNIQUE,
+    password VARCHAR(100) NOT NULL,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
     is_active BOOLEAN DEFAULT FALSE,
-    is_staff BOOLEAN DEFAULT FALSE,
     is_superuser BOOLEAN DEFAULT FALSE,
-    thumbnail TEXT NULL,
+    thumbnail VARCHAR(200) NULL,
     date_joined TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS users_id_email_is_active_indx ON users (id, email, is_active);
@@ -29,7 +28,7 @@ CREATE TABLE user_profile (
     user_id UUID NOT NULL UNIQUE,
     phone_number phone NULL,
     birth_date DATE NULL,
-    github_link TEXT NULL,
+    github_link VARCHAR(200) NULL,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS users_detail_id_user_id ON user_profile (id, user_id);

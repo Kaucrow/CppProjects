@@ -111,6 +111,7 @@ async fn run(
             .service(crate::routes::health_check)
             .service(crate::routes::get_num)
             .service(crate::routes::add_num)
+            .configure(crate::routes::auth_routes_config)
             //.configure(crate::routes::auth_routes_config)
             // Add database pool to application state
             .app_data(pool.clone())
