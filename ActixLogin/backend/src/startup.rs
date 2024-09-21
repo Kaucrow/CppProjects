@@ -39,14 +39,8 @@ impl Application {
             .await
             .expect("Failed to migrate the database.");
 
-        let address = format!(
-            "{}:{}",
-            settings.application.host, settings.application.port
-        );
-
-        let listener = std::net::TcpListener::bind(&address)?;
-        let port = listener.local_addr().unwrap().port();
-        let server = run(listener, connection_pool, settings).await?;
+        let port = settings.application.port;
+        let server = run(connection_pool, settings).await?;
 
         Ok(Self { port, server })
     }
@@ -69,7 +63,6 @@ pub async fn get_connection_pool(
 }
 
 async fn run(
-    listener: std::net::TcpListener,
     db_pool: sqlx::postgres::PgPool,
     settings: crate::settings::Settings,
 ) -> Result<actix_web::dev::Server, std::io::Error> {
@@ -124,8 +117,7 @@ async fn run(
             .app_data(redis_pool_data.clone())
             .wrap(actix_web::middleware::Logger::default())
     })
-    .bind_rustls_0_23(format!("{}:8443", settings.application.host), rustls_config)?
-    .listen(listener)?
+    .bind_rustls_0_23(format!("{}:{}", settings.application.host, settings.application.port), rustls_config)?
     .run();
 
     Ok(server)
