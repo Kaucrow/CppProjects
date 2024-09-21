@@ -22,3 +22,6 @@ vite.config.ts.timestamp-*
 
 # HTTPS cert and key
 *.pem
+
+# Sveltekit lib files
+!/src/lib
