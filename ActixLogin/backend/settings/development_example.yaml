@@ -1,9 +1,9 @@
 # settings/development.yaml
 
 application:
-  protocol: http
+  protocol: https
   host: 127.0.0.1
-  base_url: "http://127.0.0.1"
+  base_url: "https://127.0.0.1"
 
 debug: true
 

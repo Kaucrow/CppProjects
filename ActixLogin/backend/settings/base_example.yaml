@@ -1,6 +1,6 @@
 # settings/base.yaml
 application:
-  port: 5000
+  port: 8443
 
 database:
   username: "DB_USERNAME"

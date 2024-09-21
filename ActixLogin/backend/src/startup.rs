@@ -1,6 +1,9 @@
 // src/startup.rs
 use sqlx;
 use deadpool_redis;
+use std::{fs::File, io::BufReader};
+use rustls::{pki_types::PrivateKeyDer, ServerConfig};
+use rustls_pemfile::{certs, pkcs8_private_keys};
 
 pub struct Application {
     port: u16,
@@ -83,6 +86,8 @@ async fn run(
     // For session
     let secret_key = actix_web::cookie::Key::from(settings.secret.hmac_secret.as_bytes());
 
+    let rustls_config = load_rustls_config();
+
     let server = actix_web::HttpServer::new(move || {
         actix_web::App::new()
             .wrap(
@@ -104,8 +109,8 @@ async fn run(
                     secret_key.clone(),
                 )
                 .cookie_http_only(true)
-                .cookie_same_site(actix_web::cookie::SameSite::None)
-                .cookie_secure(true)
+                //.cookie_same_site(actix_web::cookie::SameSite::None)
+                .cookie_secure(false)
                 .build()
             )
             .service(crate::routes::health_check)
@@ -119,8 +124,37 @@ async fn run(
             .app_data(redis_pool_data.clone())
             .wrap(actix_web::middleware::Logger::default())
     })
+    .bind_rustls_0_23(format!("{}:8443", settings.application.host), rustls_config)?
     .listen(listener)?
     .run();
 
     Ok(server)
+}
+
+fn load_rustls_config() -> rustls::ServerConfig {
+    rustls::crypto::aws_lc_rs::default_provider()
+        .install_default()
+        .unwrap();
+
+    // init server config builder with safe defaults
+    let config = ServerConfig::builder().with_no_client_auth();
+
+    // load TLS key/cert files
+    let cert_file = &mut BufReader::new(File::open("certificate/localhost+1.pem").unwrap());
+    let key_file = &mut BufReader::new(File::open("certificate/localhost+1-key.pem").unwrap());
+
+    // convert files to key/cert objects
+    let cert_chain = certs(cert_file).collect::<Result<Vec<_>, _>>().unwrap();
+    let mut keys = pkcs8_private_keys(key_file)
+        .map(|key| key.map(PrivateKeyDer::Pkcs8))
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
+
+    // exit if no keys could be parsed
+    if keys.is_empty() {
+        eprintln!("Could not locate PKCS 8 private keys.");
+        std::process::exit(1);
+    }
+
+    config.with_single_cert(cert_chain, keys.remove(0)).unwrap()
 }
