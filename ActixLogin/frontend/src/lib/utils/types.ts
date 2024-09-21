@@ -49,3 +49,7 @@ export interface Loading {
 	status: Status;
 	message: string;
 }
+
+export interface Data {
+    fetch: typeof fetch;
+}

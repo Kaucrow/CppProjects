@@ -45,12 +45,12 @@ export const post = async (
                 requestInitOptions['body'] = body;
             }
         }
-        if (body === undefined && method !== 'DELETE') {
+        /*if (body === undefined && method !== 'DELETE') {
             const errors: Array<CustomError> = [
                 { error: 'Unless you are performing a DELETE operation, you must have a body.', id: 0 }
             ];
             return [{}, errors];
-        }
+        }*/
 
         console.log(`Sending POST request to ${url}`)
         const res = await sveltekitFetch(url, requestInitOptions);
