@@ -39,12 +39,14 @@
 
 <Header />
 
+<img src="/ferris.png" alt="Ferris" class="fixed h-auto lg:w-[40%] w-[50%] dark:mix-blend-soft-light left-16 -bottom-4 overflow-hidden opacity-45 dark:opacity-85 max-w-full z-0" />
+
 <section class="flex items-center justify-center my-12">
-    <div class="flex items-center justify-center mb-12 md:w-8/12 lg:w-4/12 p-8 lg:px-0 border-4 rounded-2xl border-neutral-300 dark:border-neutral-800">
+    <div class="flex items-center justify-center mb-8 z-10 md:w-8/12 lg:w-4/12 p-8 lg:px-0 border-4 rounded-2xl bg-neutral-200 border-neutral-200 dark:bg-neutral-800 dark:border-neutral-800">
         <form>
             <!--Sign in section-->
             <div
-                class="flex flex-row items-center justify-center lg:justify-start">
+                class="flex flex-row items-center justify-center lg:justify-start lg:ml-4">
                 <p class= "text-neutral-700 dark:text-neutral-200 mb-0 me-4 text-lg inline-block align-middle select-none">Sign in with</p>
 
                 <!-- Google -->
@@ -61,7 +63,7 @@
 
             <!-- Separator between social media sign in and email/password sign in -->
             <div
-                class="my-4 flex items-center before:mt-0.5 before:flex-1 before:border-t before:border-neutral-300 after:mt-0.5 after:flex-1 after:border-t after:border-neutral-300 dark:before:border-neutral-600 dark:after:border-neutral-600">
+                class="my-4 flex items-center before:mt-0.5 before:flex-1 before:border-t before:border-neutral-400 after:mt-0.5 after:flex-1 after:border-t after:border-neutral-400 dark:before:border-neutral-700 dark:after:border-neutral-700">
                 <p class="text-neutral-700 dark:text-neutral-200 mx-4 mb-0 text-center font-semibold select-none">Or</p>
             </div>
 
@@ -70,12 +72,12 @@
                 <input
                     required
                     type="text"
-                        class="peer block min-h-[auto] w-full border-b-2 border-neutral-300 dark:border-neutral-800 bg-transparent px-3 py-[0.32rem] leading-[2.15] outline-none transition-all duration-200 ease-linear focus:placeholder:opacity-100 motion-reduce:transition-none focus:border-blue-500 dark:focus:border-blue-500 dark:text-neutral-50 [&:not([input-active])]:placeholder:opacity-0"
+                        class="peer block min-h-[auto] w-full border-b-2 border-neutral-400 dark:border-neutral-700 bg-transparent px-3 py-[0.32rem] leading-[2.15] outline-none transition-all duration-200 ease-linear focus:placeholder:opacity-100 motion-reduce:transition-none focus:border-blue-500 dark:focus:border-blue-500 dark:text-neutral-200 [&:not([input-active])]:placeholder:opacity-0"
                         id="EmailInput"
                         placeholder="Email address"/>
                 <label
                     for="EmailInput"
-                    class="pointer-events-none absolute left-3 top-0 mb-0 max-w-[90%] origin-[0_0] truncate mt-[0.37rem] leading-[2.15] text-neutral-500 bg-transparent transition-all duration-200 ease-out peer-focus:-translate-y-[1.15rem] peer-focus:scale-[0.8] motion-reduce:transition-none peer-focus:text-blue-500 peer-valid:text-transparent dark:text-neutral-500">
+                    class="pointer-events-none absolute left-3 top-0 mb-0 max-w-[90%] origin-[0_0] truncate mt-[0.37rem] leading-[2.15] text-neutral-500 bg-transparent transition-all duration-200 ease-out peer-focus:-translate-y-[1.15rem] peer-focus:scale-[0.8] motion-reduce:transition-none peer-focus:text-blue-500 peer-valid:text-transparent dark:text-neutral-600">
                     Email address
                 </label>
             </div>
@@ -85,12 +87,12 @@
                 <input
                     required
                     type="text"
-                        class="peer block min-h-[auto] w-full border-b-2 border-neutral-300 dark:border-neutral-800 bg-transparent px-3 py-[0.32rem] leading-[2.15] outline-none transition-all duration-200 ease-linear focus:placeholder:opacity-100 motion-reduce:transition-none focus:border-blue-500 dark:focus:border-blue-500 dark:text-neutral-50 [&:not([input-active])]:placeholder:opacity-0"
+                        class="peer block min-h-[auto] w-full border-b-2 border-neutral-400 dark:border-neutral-700 bg-transparent px-3 py-[0.32rem] leading-[2.15] outline-none transition-all duration-200 ease-linear focus:placeholder:opacity-100 motion-reduce:transition-none focus:border-blue-500 dark:focus:border-blue-500 dark:text-neutral-200 [&:not([input-active])]:placeholder:opacity-0"
                         id="PasswordInput"
                         placeholder="Password"/>
                 <label
                     for="PasswordInput"
-                    class="pointer-events-none absolute left-3 top-0 mb-0 max-w-[90%] origin-[0_0] truncate mt-[0.37rem] leading-[2.15] text-neutral-500 bg-transparent transition-all duration-200 ease-out peer-focus:-translate-y-[1.15rem] peer-focus:scale-[0.8] motion-reduce:transition-none peer-focus:text-blue-500 peer-valid:text-transparent dark:text-neutral-500">
+                    class="pointer-events-none absolute left-3 top-0 mb-0 max-w-[90%] origin-[0_0] truncate mt-[0.37rem] leading-[2.15] text-neutral-500 bg-transparent transition-all duration-200 ease-out peer-focus:-translate-y-[1.15rem] peer-focus:scale-[0.8] motion-reduce:transition-none peer-focus:text-blue-500 peer-valid:text-transparent dark:text-neutral-600">
                     Password
                 </label>
             </div>
@@ -100,7 +102,7 @@
                 <div class="flex items-center mb-[0.125rem] ml-0 mr-6 min-h-[1.5rem] ps-[1.5rem]">
                     <!-- Checkbox -->
                     <div class="relative">
-                        <input type="checkbox" id="Checkbox" class="peer h-6 w-6 cursor-pointer appearance-none rounded border-2 border-neutral-300 dark:border-neutral-500 bg-transparent transition-all duration-300 checked:dark:bg-neutral-800 hover:border-neutral-400 hover:dark:border-neutral-300  hover:checked:dark:border-neutral-800 hover:checked:border-neutral-700 checked:bg-neutral-700 checked:border-neutral-700 checked:dark:border-neutral-800" />
+                        <input type="checkbox" id="Checkbox" class="peer h-6 w-6 cursor-pointer appearance-none rounded border-2 border-neutral-500 dark:border-neutral-700 bg-transparent transition-all duration-300 checked:dark:bg-neutral-700 hover:border-neutral-600 hover:dark:border-neutral-400  hover:checked:dark:border-neutral-700 hover:checked:border-neutral-700 checked:bg-neutral-700 checked:border-neutral-700 checked:dark:border-neutral-700" />
                         <svg class="pointer-events-none absolute top-[40%] left-1/2 w-4 h-4 fill-white stroke-white transform -translate-x-1/2 -translate-y-1/2 scale-0 transition-transform duration-300 peer-checked:scale-100" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M438.6 105.4c12.5 12.5 12.5 32.8 0 45.3l-256 256c-12.5 12.5-32.8 12.5-45.3 0l-128-128c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0L160 338.7 393.4 105.4c12.5-12.5 32.8-12.5 45.3 0z"/></svg>
                     </div>
 
@@ -112,23 +114,23 @@
                 </div>
 
                 <!-- Forgot password link -->
-                    <a href="#!" class="text-neutral-800 dark:text-neutral-200 relative bottom-[0.2rem] text-sm mr-6 hover:text-blue-500 hover:dark:text-blue-500">Forgot password?</a>
+                    <a href="#!" class="text-neutral-700 dark:text-neutral-200 relative bottom-[0.2rem] text-sm mr-6 hover:text-blue-500 hover:dark:text-blue-500">Forgot password?</a>
             </div>
                 
             <!-- Login button -->
             <div class="text-center">
                 <button
                     type="button"
-                    class="inline-block w-full rounded bg-blue-400 px-7 pb-2 pt-3 text-sm uppercase leading-normal text-neutral-50 font-bold transition duration-150 ease-in-out shadow-lg hover:bg-blue-500 focus:outline-none dark:shadow-black/30">
+                    class="inline-block w-full rounded-2xl bg-blue-500 px-7 pb-2 pt-3 text-sm uppercase leading-normal text-neutral-200 font-bold transition duration-150 ease-in-out shadow-md hover:bg-blue-600 focus:outline-none dark:shadow-black/30">
                     Login
                 </button>
 
                 <!-- Register link -->
-                <p class="text-neutral-700 dark:text-neutral-200 mb-0 mt-2 pt-1 text-sm font-semibold select-none">
-                    Don't have an account?
+                <p class="text-neutral-700 dark:text-neutral-200 mb-0 mt-2 pt-4 text-sm font-semibold select-none">
+                    New user?
                     <a
                         href="/auth/register"
-                        class="text-green-700 dark:text-green-500 transition duration-150 ease-in-out hover:text-green-900 hover:dark:text-green-700 focus:text-danger-600 active:text-danger-700 pointer-events-auto">
+                        class="text-blue-700 dark:text-blue-500 transition duration-150 ease-in-out hover:text-blue-800 hover:dark:text-blue-600 focus:text-danger-600 active:text-danger-700 pointer-events-auto">
                         Register
                     </a>
                 </p>

@@ -3,7 +3,7 @@
     export let close: () => void;
 </script>
 
-<div class={`fixed z-50 top-0 left-0 h-full w-64 bg-neutral-300 dark:bg-neutral-800 transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out`}>
+<div class={`fixed z-50 top-0 left-0 h-full w-64 border-r-[6px] border-neutral-300 dark:border-neutral-700 bg-neutral-200 dark:bg-neutral-800 transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out`}>
     <div class="p-4">
         <div class="flex flex-row items-center justify-between">
             <a href="/" class="inline-flex items-center">
