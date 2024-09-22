@@ -43,7 +43,7 @@
     }
 </script>
 
-<header class="dark:bg-neutral-900 text-neutral-200 relative">
+<header class="dark:bg-neutral-900 text-neutral-200 h-[70px]">
     <div class="container mx-auto flex items-center justify-between p-4">
         <!-- Menu and logo -->
         <div class="flex items-center justify-between">

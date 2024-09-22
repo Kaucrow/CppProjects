@@ -40,7 +40,7 @@
 <Header />
 
 <section class="flex items-center justify-center my-12">
-    <div class="flex items-center justify-center mb-12 md:w-8/12 lg:w-4/12 xl:w-4/12 p-8 lg:px-0 border-4 rounded-2xl border-neutral-300 dark:border-neutral-800">
+    <div class="flex items-center justify-center mb-12 md:w-8/12 lg:w-4/12 p-8 lg:px-0 border-4 rounded-2xl border-neutral-300 dark:border-neutral-800">
         <form>
             <!--Sign in section-->
             <div
