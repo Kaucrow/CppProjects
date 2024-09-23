@@ -13,16 +13,16 @@
     let email = '';
     let password = '';
     let reqErr: CustomError[] = [];
-    let err: string = '';
+    let err = {email: '', notFound: ''};
 
     const unsubscribe = errStore.subscribe(val => {
         reqErr = val;
     });
 
     async function submitForm() {
-        err = '';
+        err = {email: '', notFound: ''};
         if (!isValidEmail(email)) {
-            err = 'Please input a valid email.';
+            err.email = 'Please input a valid email.';
             return;
         }
 
@@ -39,7 +39,7 @@
             goto('/user');
 
         } else {
-            console.error('Failed to log in');
+            err.notFound = 'No user with these credentials was found. If you registered with these credentials, ensure you verified your account by clicking on the link sent to your email.';
         }
     }
 
@@ -52,7 +52,7 @@
 <Header />
 
 <!-- #1 Homie: Ferris -->
-<img src="/ferris.png" alt="Ferris" class="fixed h-auto lg:w-[40%] w-[50%] dark:mix-blend-soft-light left-16 -bottom-4 overflow-hidden opacity-45 dark:opacity-85 max-w-full z-0" />
+<img src="/ferris.png" alt="Ferris" class="fixed h-auto lg:w-[40%] w-[50%] dark:mix-blend-soft-light left-16 -bottom-4 overflow-hidden opacity-45 dark:opacity-85 max-w-full -z-50" />
 
 <section class="flex items-center justify-center my-12">
     <div class="flex items-center justify-center mb-8 z-10 md:w-8/12 lg:w-4/12 p-8 lg:px-0 border-4 rounded-2xl bg-neutral-200 border-neutral-200 dark:bg-neutral-800 dark:border-neutral-800">
@@ -85,7 +85,7 @@
                 <input
                     required
                     type="text"
-                        class={`peer block min-h-[auto] w-full border-b-2 ${err ? "border-red-500" : "border-neutral-400 dark:border-neutral-700"} bg-transparent px-3 py-[0.32rem] leading-[2.15] outline-none transition-all duration-200 ease-linear focus:placeholder:opacity-100 motion-reduce:transition-none focus:border-blue-500 dark:focus:border-blue-500 dark:text-neutral-200 [&:not([input-active])]:placeholder:opacity-0`}
+                        class={`peer block min-h-[auto] w-full border-b-2 ${err.email ? "border-red-500" : "border-neutral-400 dark:border-neutral-700"} bg-transparent px-3 py-[0.32rem] leading-[2.15] outline-none transition-all duration-200 ease-linear focus:placeholder:opacity-100 motion-reduce:transition-none focus:border-blue-500 dark:focus:border-blue-500 dark:text-neutral-200 [&:not([input-active])]:placeholder:opacity-0`}
                         id="EmailInput"
                         placeholder="Email address"
                         autocomplete="off"
@@ -113,8 +113,10 @@
                 </label>
             </div>
 
-            {#if err}
-                <p class="text-red-500 text-sm mb-4 mx-4 text-wrap">{err}</p>
+            {#if err.email}
+                <p class="text-red-500 max-w-72 text-sm mb-4 mx-4 text-wrap">{err.email}</p>
+            {:else if err.notFound}
+                <p class="text-red-500 max-w-72 text-sm mb-4 mx-4 text-wrap">{err.notFound}</p>
             {/if}
 
             <div class="mb-6 flex items-center justify-between">

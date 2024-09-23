@@ -63,7 +63,7 @@
 <Header />
 
 <!-- #1 Homie: Ferris -->
-<img src="/ferris.png" alt="Ferris" class="fixed h-auto lg:w-[40%] w-[50%] dark:mix-blend-soft-light left-16 -bottom-4 overflow-hidden opacity-45 dark:opacity-85 max-w-full z-0" />
+<img src="/ferris.png" alt="Ferris" class="fixed h-auto lg:w-[40%] w-[50%] dark:mix-blend-soft-light left-16 -bottom-4 overflow-hidden opacity-45 dark:opacity-85 max-w-full -z-50" />
 
 <section class="flex items-center justify-center my-10">
     <div class="flex items-center justify-center min-w-96 mb-8 z-10 md:w-8/12 lg:w-4/12 border-4 rounded-2xl p-8 border-neutral-200 bg-neutral-200 dark:bg-neutral-800 dark:border-neutral-800">
@@ -143,7 +143,7 @@
             </div>
 
             {#each Object.entries(err) as [key, msg]}
-                <p class="text-red-500 text-sm mb-4 mx-4 text-wrap">{msg}</p>
+                <p class="text-red-500 max-w-72 text-sm mb-4 mx-4 text-wrap">{msg}</p>
             {/each}
 
             <!-- Register button -->
