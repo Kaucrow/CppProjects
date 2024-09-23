@@ -5,18 +5,19 @@
 
     import { post } from '$lib/utils/requests/post'; 
     import { API_URI } from '$lib/utils/constant';
-    import { errStore } from '$lib/stores/common.store';
+    import { goto } from '$app/navigation';
 
     async function logout() {
         const [res, err] = await post(data.fetch, `${API_URI}/users/logout/`, undefined);
-        if (err.length > 0) {
-            errStore.set(err);
+        if (res.ok) {
+            sessionStorage.removeItem('loggedin')
+            goto('/');
         } else {
-            console.log("LOGGED OUT");
+            console.error("ERROR");
         }
     }
 </script>
 
-<button class="p-3 m-7 bg-slate-950 text-slate-50 border-0 rounded-2xl" on:click={logout}>
+<button class="px-6 py-2 min-w-52 bg-blue-500 hover:bg-blue-600 text-neutral-200 border-0 rounded-xl font-semibold transition uppercase" on:click={logout}>
     Logout
 </button>

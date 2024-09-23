@@ -73,18 +73,24 @@
                 <a href="#!" class="text-neutral-700 hover:text-neutral-800 dark:text-neutral-200 hover:dark:text-neutral-500 transition">Contact</a>
             </nav>
         </div>
-
-        <!-- Dark mode switch -->
+        
         <div class="flex items-center">
+            <!-- User icon -->
+            <a href="/user" class="mx-4">
+                <svg class="fill-neutral-700 dark:fill-neutral-200"xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 448 512"><!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l388.6 0c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304l-91.4 0z"/></svg>
+            </a>
+
+            <!-- Dark mode switch -->
             <input type="checkbox" id="toggle" class="hidden peer" on:change={toggleDarkMode} bind:checked={darkMode}/>
             <label for="toggle" class="flex items-center cursor-pointer">
                 <div class="relative">
                     <div class="block bg-neutral-300 w-14 h-8 rounded-full peer-checked:bg-gray-600"></div>
                     <div class="dot absolute left-1 top-1 bg-neutral-50 w-6 h-6 rounded-full transition-transform duration-300 peer-checked:translate-x-6 peer-checked:bg-gray-800"></div>
                 </div>
-                <span class="ml-3 text-neutral-800 dark:text-neutral-200 select-none">Dark Mode</span>
+                <span class="ml-3 top-12 text-neutral-700 dark:text-neutral-200 select-none">Dark Mode</span>
             </label>
         </div>
+
     </div>
 
     <Sidebar isOpen={isSidebarOpen} close={closeSideBar}/>

@@ -6,7 +6,6 @@
     import type { LoginUser } from '$lib/utils/types';
     import type { CustomError } from '$lib/utils/types';
     import { errStore } from '$lib/stores/common.store';
-    import { loggedin } from '$lib/stores/common.store';
     import Header from '$lib/components/Header.svelte';
     import { isValidEmail } from '$lib/utils/sanitation.js';
     import { goto } from '$app/navigation';
