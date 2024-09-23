@@ -1,3 +1,7 @@
+# Setting files
 base.yaml
 development.yaml
 production.yaml
+
+# HTTPS Cert
+*.pem
