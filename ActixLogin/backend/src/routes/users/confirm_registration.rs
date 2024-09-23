@@ -5,6 +5,7 @@ use actix_web::{
     web,
 };
 use sqlx::postgres::PgPool;
+use crate::types::SuccessResponse;
 
 #[derive(Deserialize)]
 pub struct Parameters {
@@ -15,13 +16,14 @@ pub struct Parameters {
     name = "Activating a new user",
     skip(parameters, pool, redis_pool)
 )]
-#[actix_web::get("/register/confirm")]
+#[actix_web::get("/register/verify")]
 pub async fn confirm(
     parameters: web::Query<Parameters>,
     pool: web::Data<PgPool>,
     redis_pool: web::Data<deadpool_redis::Pool>,
 ) -> HttpResponse {
     let settings = crate::settings::get_settings().expect("Failed to read settings.");
+    tracing::event!(target: "backend", tracing::Level::INFO, "Token {:#?}", parameters.token);
 
     let mut redis_con = redis_pool
         .get()
@@ -64,12 +66,9 @@ pub async fn confirm(
             tracing::event!(target: "backend", tracing::Level::INFO, "New user was activated successfully.");
 
             // if the user is activated successfully
-            HttpResponse::SeeOther()
-                .insert_header((
-                    http::header::LOCATION,
-                    format!("{}/auth/confirmed", settings.frontend_url),
-                ))
-                .finish()
+            HttpResponse::Ok().json(
+                SuccessResponse{ message: "User activated successfully.".to_string() }
+            )
         }
         Err(e) => {
             tracing::event!(target: "backend", tracing::Level::ERROR, "Cannot activate account: {}", e);

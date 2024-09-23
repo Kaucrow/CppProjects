@@ -3,7 +3,7 @@
     import type { Data } from '$lib/utils/types';
     export let data: Data;
 
-    import { post } from '$lib/utils/requests/post.requests'; 
+    import { post } from '$lib/utils/requests/post'; 
     import { API_URI } from '$lib/utils/constant';
     import { errStore } from '$lib/stores/common.store';
 

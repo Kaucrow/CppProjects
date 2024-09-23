@@ -100,23 +100,25 @@ pub async fn send_multipart_email(
     };
     let web_address = {
         if settings.debug {
-            format!(
+            /*format!(
                 "{}:{}",
                 settings.application.base_url, settings.application.port,
-            )
+            )*/
+            &settings.frontend_url
         } else {
-            settings.application.base_url
+            //settings.application.base_url
+            &settings.frontend_url
         }
     };
     let confirmation_link = {
         if template_filename == "password_reset_email.html" {
             format!(
-                "{}/users/password/confirm/change_password?token={}",
+                "{}/auth/password/verify/change_password?token={}",
                 web_address, issued_token,
             )
         } else {
             format!(
-                "{}/users/register/confirm?token={}",
+                "{}/auth/register/verify/{}",
                 web_address, issued_token,
             )
         }

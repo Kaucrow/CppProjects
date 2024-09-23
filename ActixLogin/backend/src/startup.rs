@@ -86,7 +86,7 @@ async fn run(
             .wrap(
             actix_cors::Cors::default()
                 .allowed_origin(&settings.frontend_url)
-                .allowed_methods(vec!["GET", "POST", "PATCH", "DELETE"])
+                .allowed_methods(vec!["GET", "POST", "PATCH", "DELETE", "OPTIONS"])
                 .allowed_headers(vec![
                     actix_web::http::header::AUTHORIZATION,
                     actix_web::http::header::ACCEPT,

@@ -1,33 +1,46 @@
 <script lang="ts">
     export let data;
 
-    import { post } from '$lib/utils/requests/post.requests';
+    import { post } from '$lib/utils/requests/post.js';
     import { API_URI } from '$lib/utils/constant';
     import type { LoginUser } from '$lib/utils/types';
     import type { CustomError } from '$lib/utils/types';
     import { errStore } from '$lib/stores/common.store';
+    import { loggedin } from '$lib/stores/common.store';
     import Header from '$lib/components/Header.svelte';
+    import { isValidEmail } from '$lib/utils/sanitation.js';
+    import { goto } from '$app/navigation';
 
     let email = '';
     let password = '';
-    let err: CustomError[] = [];
+    let reqErr: CustomError[] = [];
+    let err: string = '';
 
     const unsubscribe = errStore.subscribe(val => {
-        err = val;
+        reqErr = val;
     });
 
     async function submitForm() {
+        err = '';
+        if (!isValidEmail(email)) {
+            err = 'Please input a valid email.';
+            return;
+        }
+
         const loginUser: LoginUser = {
             email,
             password
         }
 
-        const [res, err] = await post(data.fetch, `${API_URI}/users/login/`, loginUser);
+        const [res, localReqErr] = await post(data.fetch, `${API_URI}/users/login/`, loginUser);
 
-        if (err.length > 0) {
-            console.error('Failed to log in');
-        } else {
+        if (res.ok) {
             console.log('Logged in successfully');
+            sessionStorage.setItem('loggedin', 'true');
+            goto('/user');
+
+        } else {
+            console.error('Failed to log in');
         }
     }
 
@@ -39,11 +52,12 @@
 
 <Header />
 
+<!-- #1 Homie: Ferris -->
 <img src="/ferris.png" alt="Ferris" class="fixed h-auto lg:w-[40%] w-[50%] dark:mix-blend-soft-light left-16 -bottom-4 overflow-hidden opacity-45 dark:opacity-85 max-w-full z-0" />
 
 <section class="flex items-center justify-center my-12">
     <div class="flex items-center justify-center mb-8 z-10 md:w-8/12 lg:w-4/12 p-8 lg:px-0 border-4 rounded-2xl bg-neutral-200 border-neutral-200 dark:bg-neutral-800 dark:border-neutral-800">
-        <form>
+        <form on:submit|preventDefault={submitForm} class="max-w-sm">
             <!--Sign in section-->
             <div
                 class="flex flex-row items-center justify-center lg:justify-start lg:ml-4">
@@ -72,9 +86,11 @@
                 <input
                     required
                     type="text"
-                        class="peer block min-h-[auto] w-full border-b-2 border-neutral-400 dark:border-neutral-700 bg-transparent px-3 py-[0.32rem] leading-[2.15] outline-none transition-all duration-200 ease-linear focus:placeholder:opacity-100 motion-reduce:transition-none focus:border-blue-500 dark:focus:border-blue-500 dark:text-neutral-200 [&:not([input-active])]:placeholder:opacity-0"
+                        class={`peer block min-h-[auto] w-full border-b-2 ${err ? "border-red-500" : "border-neutral-400 dark:border-neutral-700"} bg-transparent px-3 py-[0.32rem] leading-[2.15] outline-none transition-all duration-200 ease-linear focus:placeholder:opacity-100 motion-reduce:transition-none focus:border-blue-500 dark:focus:border-blue-500 dark:text-neutral-200 [&:not([input-active])]:placeholder:opacity-0`}
                         id="EmailInput"
-                        placeholder="Email address"/>
+                        placeholder="Email address"
+                        autocomplete="off"
+                        bind:value={email}/>
                 <label
                     for="EmailInput"
                     class="pointer-events-none absolute left-3 top-0 mb-0 max-w-[90%] origin-[0_0] truncate mt-[0.37rem] leading-[2.15] text-neutral-500 bg-transparent transition-all duration-200 ease-out peer-focus:-translate-y-[1.15rem] peer-focus:scale-[0.8] motion-reduce:transition-none peer-focus:text-blue-500 peer-valid:text-transparent dark:text-neutral-600">
@@ -86,16 +102,21 @@
             <div class="relative mb-6">
                 <input
                     required
-                    type="text"
+                    type="password"
                         class="peer block min-h-[auto] w-full border-b-2 border-neutral-400 dark:border-neutral-700 bg-transparent px-3 py-[0.32rem] leading-[2.15] outline-none transition-all duration-200 ease-linear focus:placeholder:opacity-100 motion-reduce:transition-none focus:border-blue-500 dark:focus:border-blue-500 dark:text-neutral-200 [&:not([input-active])]:placeholder:opacity-0"
                         id="PasswordInput"
-                        placeholder="Password"/>
+                        placeholder="Password"
+                        bind:value={password}/>
                 <label
                     for="PasswordInput"
                     class="pointer-events-none absolute left-3 top-0 mb-0 max-w-[90%] origin-[0_0] truncate mt-[0.37rem] leading-[2.15] text-neutral-500 bg-transparent transition-all duration-200 ease-out peer-focus:-translate-y-[1.15rem] peer-focus:scale-[0.8] motion-reduce:transition-none peer-focus:text-blue-500 peer-valid:text-transparent dark:text-neutral-600">
                     Password
                 </label>
             </div>
+
+            {#if err}
+                <p class="text-red-500 text-sm mb-4 mx-4 text-wrap">{err}</p>
+            {/if}
 
             <div class="mb-6 flex items-center justify-between">
                 <!-- Remember me -->
@@ -120,7 +141,7 @@
             <!-- Login button -->
             <div class="text-center">
                 <button
-                    type="button"
+                    type="submit"
                     class="inline-block w-full rounded-2xl bg-blue-500 px-7 pb-2 pt-3 text-sm uppercase leading-normal text-neutral-200 font-bold transition duration-150 ease-in-out shadow-md hover:bg-blue-600 focus:outline-none dark:shadow-black/30">
                     Login
                 </button>

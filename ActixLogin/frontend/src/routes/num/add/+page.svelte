@@ -4,7 +4,7 @@
     import type { NumResponse, CustomError, AddNumBody } from '$lib/utils/types';
     import { loading } from '$lib/stores/loading.store';
     import { isNumResponse } from '$lib/utils/typeguards';
-    import { post } from '$lib/utils/requests/post.requests';
+    import { post } from '$lib/utils/requests/post.js';
     import { API_URI } from '$lib/utils/constant';
 
     let errors: Array<CustomError> = data.errors || [];
