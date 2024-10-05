@@ -22,7 +22,7 @@
         loading.setLoading(true, 'Please wait...');
         const [res, err] = await post(
             data.fetch,
-            `${API_URI}/add-num/`,
+            `${API_URI}/add-num`,
             {
                 number: Number(inputValue),
             }

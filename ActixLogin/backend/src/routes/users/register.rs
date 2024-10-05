@@ -20,7 +20,7 @@ fields(
     new_user_first_name = %new_user.first_name,
     new_user_last_name = %new_user.last_name,
 ))]
-#[actix_web::post("/register/")]
+#[actix_web::post("/register")]
 pub async fn register_user(
     new_user: web::Json<NewUser>,
     pool: web::Data<PgPool>,

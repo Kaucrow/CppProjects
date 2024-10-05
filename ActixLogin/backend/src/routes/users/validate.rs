@@ -2,8 +2,8 @@
 use actix_web::HttpResponse;
 
 #[tracing::instrument(name = "Log out user", skip(session))]
-#[actix_web::post("/logout")]
-pub async fn log_out(session: actix_session::Session) -> HttpResponse {
+#[actix_web::post("/validate_user")]
+pub async fn validate_user(session: actix_session::Session) -> HttpResponse {
     match session_user_id(&session).await {
         Ok(_) => {
             tracing::event!(target: "backend", tracing::Level::INFO, "User id retrieved from the session.");

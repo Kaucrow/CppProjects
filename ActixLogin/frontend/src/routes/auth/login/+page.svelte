@@ -31,7 +31,7 @@
             password
         }
 
-        const [res, localReqErr] = await post(data.fetch, `${API_URI}/users/login/`, loginUser);
+        const [res, localReqErr] = await post(data.fetch, `${API_URI}/users/login`, loginUser);
 
         if (res.ok) {
             console.log('Logged in successfully');

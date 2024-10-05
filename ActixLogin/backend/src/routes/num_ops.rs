@@ -13,7 +13,7 @@ struct NumResponse {
 }
 
 #[tracing::instrument]
-#[actix_web::get("/get-num/")]
+#[actix_web::get("/get-num")]
 pub async fn get_num() -> HttpResponse {
     tracing::event!(target: "backend", tracing::Level::DEBUG, "Accessing get-num endpoint.");
     let mut num = NUM.lock().unwrap();

@@ -5,7 +5,7 @@ use crate::types::LoginUser;
 const USER_NOT_FOUND_MSG: &'static str = "A user with these details does not exist. If you registered with these details, ensure you activated your account by clicking on the link sent to your e-mail address.";
 
 #[tracing::instrument(name = "Logging a user in", skip(pool, user, session), fields(user_email = %user.email))]
-#[actix_web::post("/login/")]
+#[actix_web::post("/login")]
 async fn login_user(
     user: web::Json<LoginUser>,
     pool: web::Data<PgPool>,

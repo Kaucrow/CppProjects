@@ -1,3 +1,4 @@
+use actix_web::middleware;
 // src/startup.rs
 use sqlx;
 use deadpool_redis;
@@ -110,12 +111,11 @@ async fn run(
             .service(crate::routes::get_num)
             .service(crate::routes::add_num)
             .configure(crate::routes::auth_routes_config)
-            //.configure(crate::routes::auth_routes_config)
             // Add database pool to application state
             .app_data(pool.clone())
             // Add redis pool to application state
             .app_data(redis_pool_data.clone())
-            .wrap(actix_web::middleware::Logger::default())
+            .wrap(middleware::NormalizePath::trim())
     })
     .bind_rustls_0_23(format!("{}:{}", settings.application.host, settings.application.port), rustls_config)?
     .run();

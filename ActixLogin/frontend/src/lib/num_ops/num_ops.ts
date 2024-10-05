@@ -6,7 +6,7 @@ import type { NumResponse, CustomError } from '$lib/utils/types';
 import { isNumResponse } from '../utils/typeguards'
 
 export async function getNum(fetchFn: typeof fetch) {
-    const [res, errors] = await get(fetchFn, `${API_URI}/get-num/`);
+    const [res, errors] = await get(fetchFn, `${API_URI}/get-num`);
     if (isNumResponse(res)) {
         console.log('Valid num object:', res.number);
         return {

@@ -44,7 +44,7 @@
             last_name: ''
         }
 
-        const [res, localReqErr] = await post(data.fetch, `${API_URI}/users/register/`, newUser);
+        const [res, localReqErr] = await post(data.fetch, `${API_URI}/users/register`, newUser);
 
         if (res.ok) {
             console.log('Email sent!');
