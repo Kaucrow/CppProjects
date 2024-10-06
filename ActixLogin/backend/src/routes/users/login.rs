@@ -11,7 +11,7 @@ async fn login_user(
     pool: web::Data<PgPool>,
     session: actix_session::Session,
 ) -> HttpResponse {
-    tracing::event!(target: "backend", tracing::Level::INFO, "Accessing LOGIN.");
+    tracing::info!(target: "backend", "Accessing LOGIN.");
     match get_user_who_is_active(&pool, &user.email).await {
         Ok(db_user) => {
             let password_hash = db_user.password.clone();
@@ -25,7 +25,7 @@ async fn login_user(
 
             match verify_result.await {
                 Ok(()) => {
-                    tracing::event!(target: "backend", tracing::Level::INFO, "User logged in successfully.");
+                    tracing::info!(target: "backend", "User logged in successfully.");
                     session.renew();
                     session
                         .insert(crate::types::USER_ID_KEY, db_user.id)

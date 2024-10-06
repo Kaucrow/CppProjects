@@ -39,6 +39,10 @@ export interface LoginUser {
     password: string,
 }
 
+export interface UserValidation {
+    isSuperuser: boolean,
+}
+
 export interface AddNumBody {
     number: number;
 }

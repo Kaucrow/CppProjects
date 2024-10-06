@@ -13,6 +13,7 @@ export const get = async (
     const requestInitOptions: RequestInit = {
         method: 'GET',
         mode: 'cors',
+        credentials: 'include',
     };
 
     console.log(`Sending GET request to ${url}`)

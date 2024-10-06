@@ -103,8 +103,8 @@ async fn run(
                     secret_key.clone(),
                 )
                 .cookie_http_only(true)
-                //.cookie_same_site(actix_web::cookie::SameSite::None)
-                .cookie_secure(false)
+                .cookie_same_site(actix_web::cookie::SameSite::Lax)
+                .cookie_secure(true)
                 .build()
             )
             .service(crate::routes::health_check)

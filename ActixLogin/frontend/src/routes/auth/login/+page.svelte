@@ -35,7 +35,6 @@
 
         if (res.ok) {
             console.log('Logged in successfully');
-            sessionStorage.setItem('loggedin', 'true');
             goto('/user');
 
         } else {

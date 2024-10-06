@@ -1,18 +1,8 @@
 <script lang="ts">
     export let data;
 
-    import { onMount } from "svelte";
-    import { goto } from "$app/navigation";
     import Header from "$lib/components/Header.svelte";
     import LogoutButton from "$lib/components/LogoutButton.svelte";
-
-    onMount(() => {
-        let loggedin = sessionStorage.getItem('loggedin');
-        if (loggedin !== 'true') {
-            goto('/'); // Redirect to home if not logged in
-        }
-    })
-
 </script>
 
 <Header />

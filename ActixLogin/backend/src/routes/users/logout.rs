@@ -1,5 +1,6 @@
 // src/routes/users/logout.rs
 use actix_web::HttpResponse;
+use super::validate::session_user_id;
 
 #[tracing::instrument(name = "Log out user", skip(session))]
 #[actix_web::post("/logout")]
@@ -20,16 +21,5 @@ pub async fn log_out(session: actix_session::Session) -> HttpResponse {
                         .to_string(),
             })
         }
-    }
-}
-
-#[tracing::instrument(name = "Get user_id from session.", skip(session))]
-async fn session_user_id(session: &actix_session::Session) -> Result<uuid::Uuid, String> {
-    match session.get(crate::types::USER_ID_KEY) {
-        Ok(user_id) => match user_id {
-            Some(id) => Ok(id),
-            None => Err("You are not authenticated".to_string()),
-        },
-        Err(e) => Err(format!("{e}")),
     }
 }
