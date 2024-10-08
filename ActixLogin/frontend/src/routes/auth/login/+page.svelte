@@ -37,7 +37,6 @@
         if (res.ok) {
             console.log('Logged in successfully');
             goto(`${CLT_MOD}/user`);
-
         } else {
             err.notFound = 'No user with these credentials was found. If you registered with these credentials, ensure you verified your account by clicking on the link sent to your email.';
         }
@@ -46,13 +45,15 @@
     import { onDestroy } from 'svelte';
     onDestroy(() => {
         unsubscribe();
-    });
+    })
+
+    console.log(CLT_MOD);
 </script>
 
 <Header />
 
 <!-- #1 Homie: Ferris -->
-<img src="/ferris.png" alt="Ferris" class="fixed h-auto lg:w-[40%] w-[50%] dark:mix-blend-soft-light left-16 -bottom-4 overflow-hidden opacity-45 dark:opacity-85 max-w-full -z-50" />
+<img src={`${CLT_MOD}/ferris.png`} alt="Ferris" class="fixed h-auto lg:w-[40%] w-[50%] dark:mix-blend-soft-light left-16 -bottom-4 overflow-hidden opacity-45 dark:opacity-85 max-w-full -z-50" />
 
 <section class="flex items-center justify-center my-12">
     <div class="flex items-center justify-center mb-8 z-10 md:w-8/12 lg:w-4/12 p-8 lg:px-0 border-4 rounded-2xl bg-neutral-200 border-neutral-200 dark:bg-neutral-800 dark:border-neutral-800">

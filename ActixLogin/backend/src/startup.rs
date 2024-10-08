@@ -80,14 +80,15 @@ async fn run(
     // For session
     let secret_key = actix_web::cookie::Key::from(settings.secret.hmac_secret.as_bytes());
 
-    let rustls_config = load_rustls_config();
-
+    /*let cookie_secure =
+        if settings.application.protocol == "https" { true }
+        else { false };*/
+    
     let server = actix_web::HttpServer::new(move || {
         actix_web::App::new()
             .wrap(
             actix_cors::Cors::default()
                 .allowed_origin(&settings.frontend_url)
-                .allowed_origin("https://4c45-149-40-62-38.ngrok-free.app")
                 .allowed_methods(vec!["GET", "POST", "PATCH", "DELETE", "OPTIONS"])
                 .allowed_headers(vec![
                     actix_web::http::header::AUTHORIZATION,
@@ -121,6 +122,7 @@ async fn run(
     });
 
     let server = if settings.application.protocol == "https" {
+        let rustls_config = load_rustls_config();
         server.bind_rustls_0_23(format!("{}:{}", settings.application.host, settings.application.port), rustls_config)?
         .run()
     } else {

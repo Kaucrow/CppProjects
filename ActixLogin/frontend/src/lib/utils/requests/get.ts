@@ -1,22 +1,21 @@
 import type {
-    ApiResponse,
-    NumResponse,
     CustomError,
-    LoginUser,
 } from "../types";
 
 export const get = async (
     sveltekitFetch: typeof fetch,
     url: string,
 ): Promise<[Response, Array<CustomError>]> => {
+    let headers = import.meta.env.DEV
+        ? undefined
+        : { 'ngrok-skip-browser-warning': 'true' };
+
     // used in fetch
     const requestInitOptions: RequestInit = {
         method: 'GET',
         mode: 'cors',
         credentials: 'include',
-        headers: {
-            'ngrok-skip-browser-warning': 'true',
-        }
+        headers,
     };
 
     console.log(`Sending GET request to ${url}`)

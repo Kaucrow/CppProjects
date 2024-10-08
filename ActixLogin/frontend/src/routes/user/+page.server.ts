@@ -9,7 +9,7 @@ export const load: ServerLoad = async ({ fetch, cookies }) => {
 
     if (id) {
         const [res, err] = await get(fetch, `${API_URI}/users/validate`);
-
+        console.log(`${API_URI}/users/validate`);
         if (res.ok) {
             const data = await res.json();
 
