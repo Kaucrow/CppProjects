@@ -87,11 +87,13 @@ async fn run(
             .wrap(
             actix_cors::Cors::default()
                 .allowed_origin(&settings.frontend_url)
+                .allowed_origin("https://4c45-149-40-62-38.ngrok-free.app")
                 .allowed_methods(vec!["GET", "POST", "PATCH", "DELETE", "OPTIONS"])
                 .allowed_headers(vec![
                     actix_web::http::header::AUTHORIZATION,
                     actix_web::http::header::ACCEPT,
                 ])
+                .allowed_header("ngrok-skip-browser-warning")
                 .allowed_header(actix_web::http::header::CONTENT_TYPE)
                 .expose_headers(&[actix_web::http::header::CONTENT_DISPOSITION])
                 .supports_credentials()
@@ -116,9 +118,20 @@ async fn run(
             // Add redis pool to application state
             .app_data(redis_pool_data.clone())
             .wrap(middleware::NormalizePath::trim())
-    })
-    .bind_rustls_0_23(format!("{}:{}", settings.application.host, settings.application.port), rustls_config)?
-    .run();
+    });
+
+    let server = if settings.application.protocol == "https" {
+        server.bind_rustls_0_23(format!("{}:{}", settings.application.host, settings.application.port), rustls_config)?
+        .run()
+    } else {
+        let address = format!(
+            "{}:{}",
+            settings.application.host, settings.application.port
+        );
+        let listener = std::net::TcpListener::bind(&address)?;
+        server.listen(listener)?
+        .run()
+    };
 
     Ok(server)
 }

@@ -10,6 +10,7 @@
     import { isValidEmail } from '$lib/utils/sanitation.js';
     import { isValidPassword } from '$lib/utils/sanitation.js';
     import { goto } from '$app/navigation';
+    import { CLT_MOD } from '$lib/utils/constant';
 
     let email = '';
     let name = '';
@@ -48,7 +49,7 @@
 
         if (res.ok) {
             console.log('Email sent!');
-            goto('/auth/register/email-sent');
+            goto(`${CLT_MOD}/auth/register/email-sent`);
         } else {
             console.error('Failed to send verification email');
         }

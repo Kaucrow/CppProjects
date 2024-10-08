@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { darkModeStore } from '$lib/stores/common.store';
+    import { CLT_MOD } from '$lib/utils/constant';
     import Sidebar from '$lib/components/Sidebar.svelte';
 
     let isSidebarOpen = false;
@@ -66,9 +66,9 @@
 
             <!-- Large screen navbar -->
             <nav class="hidden md:flex relative top-0.5 space-x-4 ml-6">
-                <a href="/" class="text-neutral-700 hover:text-neutral-800 dark:text-neutral-200 hover:dark:text-neutral-500 transition">Home</a>
-                <a href="/auth/login" class="text-neutral-700 hover:text-neutral-800 dark:text-neutral-200 hover:dark:text-neutral-500 transition">Login</a>
-                <a href="/auth/register" class="text-neutral-700 hover:text-neutral-800 dark:text-neutral-200 hover:dark:text-neutral-500 transition">Register</a>
+                <a href={`${CLT_MOD}/`} class="text-neutral-700 hover:text-neutral-800 dark:text-neutral-200 hover:dark:text-neutral-500 transition">Home</a>
+                <a href={`${CLT_MOD}/auth/login`} class="text-neutral-700 hover:text-neutral-800 dark:text-neutral-200 hover:dark:text-neutral-500 transition">Login</a>
+                <a href={`${CLT_MOD}/auth/register`} class="text-neutral-700 hover:text-neutral-800 dark:text-neutral-200 hover:dark:text-neutral-500 transition">Register</a>
                 <a href="#!" class="text-neutral-700 hover:text-neutral-800 dark:text-neutral-200 hover:dark:text-neutral-500 transition">About</a>
                 <a href="#!" class="text-neutral-700 hover:text-neutral-800 dark:text-neutral-200 hover:dark:text-neutral-500 transition">Contact</a>
             </nav>
@@ -76,7 +76,7 @@
         
         <div class="flex items-center">
             <!-- User icon -->
-            <a href="/user" class="mx-4">
+            <a href={`${CLT_MOD}/user`} class="mx-4">
                 <svg class="fill-neutral-700 dark:fill-neutral-200"xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 448 512"><!--!Font Awesome Free 6.6.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2024 Fonticons, Inc.--><path d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512l388.6 0c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304l-91.4 0z"/></svg>
             </a>
 

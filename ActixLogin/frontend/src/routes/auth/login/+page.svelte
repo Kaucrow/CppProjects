@@ -9,6 +9,7 @@
     import Header from '$lib/components/Header.svelte';
     import { isValidEmail } from '$lib/utils/sanitation.js';
     import { goto } from '$app/navigation';
+    import { CLT_MOD } from '$lib/utils/constant';
 
     let email = '';
     let password = '';
@@ -35,7 +36,7 @@
 
         if (res.ok) {
             console.log('Logged in successfully');
-            goto('/user');
+            goto(`${CLT_MOD}/user`);
 
         } else {
             err.notFound = 'No user with these credentials was found. If you registered with these credentials, ensure you verified your account by clicking on the link sent to your email.';

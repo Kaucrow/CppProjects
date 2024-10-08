@@ -110,7 +110,8 @@ pub fn get_settings() -> Result<Settings, config::ConfigError> {
         .unwrap_or_else(|_| "development".into())
         .try_into()
         .expect("Failed to parse APP_ENVIRONMENT");
-    let environment_filename = format!("{}.yaml", environment.as_str());
+
+    let environment_filename: String = format!("{}.yaml", environment.as_str());
     let settings = config::Config::builder()
         .add_source(config::File::from(settings_directory.join("base.yaml")))
         .add_source(config::File::from(

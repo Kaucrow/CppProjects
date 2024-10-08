@@ -14,6 +14,9 @@ export const get = async (
         method: 'GET',
         mode: 'cors',
         credentials: 'include',
+        headers: {
+            'ngrok-skip-browser-warning': 'true',
+        }
     };
 
     console.log(`Sending GET request to ${url}`)
