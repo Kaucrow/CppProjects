@@ -1,9 +1,10 @@
 # settings/production.yaml
 
 application:
-  protocol: https
+  protocol: http
   host: 0.0.0.0
-  base_url: ""
+  base_url: "http://0.0.0.0"
+  port: 8080
 
 debug: false
 
@@ -14,4 +15,4 @@ secret:
   # HMAC secret
   hmac_secret: ""
 
-frontend_url: "https://localhost:3000"
+frontend_url: "https://localhost:4173"

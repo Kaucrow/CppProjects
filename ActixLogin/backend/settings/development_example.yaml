@@ -2,8 +2,9 @@
 
 application:
   protocol: https
-  host: 0.0.0.0
-  base_url: "https://0.0.0.0"
+  host: localhost
+  base_url: "https://localhost"
+  port: 443
 
 debug: true
 
@@ -14,4 +15,4 @@ secret:
   # HMAC secret
   hmac_secret: ""
 
-frontend_url: "https://localhost:3000"
+frontend_url: "https://localhost:5173"

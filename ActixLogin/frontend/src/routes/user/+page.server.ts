@@ -2,7 +2,6 @@ import type { ServerLoad } from '@sveltejs/kit';
 import { API_URI } from '$lib/utils/constant';
 import { redirect } from '@sveltejs/kit';
 import { get } from '$lib/utils/requests/get';
-import { CLT_MOD } from '$lib/utils/constant';
 
 export const load: ServerLoad = async ({ fetch, cookies }) => {
     const id = cookies.get('id');
@@ -14,12 +13,12 @@ export const load: ServerLoad = async ({ fetch, cookies }) => {
             const data = await res.json();
 
             if (data.isSuperuser) {
-                throw redirect(301, `${CLT_MOD}/`);
+                throw redirect(301, '/');
             }
         } else {
-            throw redirect(301, `${CLT_MOD}/`);
+            throw redirect(301, '/');
         }
     } else {
-        throw redirect(301, `${CLT_MOD}/`);
+        throw redirect(301, '/');
     }
 };

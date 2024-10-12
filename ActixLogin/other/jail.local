@@ -1,0 +1,24 @@
+# /etc/fail2ban/jail.local
+
+[DEFAULT]
+bantime = 600    # 10 minutes
+findtime = 600
+maxretry = 3
+bantime.increment = true
+bantime.factor = 2
+bantime.maxtime = 10800    # 3 hours
+banaction = iptables-multiport
+ignoreip = 127.0.0.1/8 ::1 <YOUR_LOCAL_SERVER_IP>    # Local server IP
+sshd_backend = systemd
+
+[sshd]
+enabled = true
+port = <YOUR_SSH_PORT> 
+logpath = /var/log/auth.log
+maxretry = 3
+
+[nginx-http-auth]
+enabled = true
+port = 80,443
+logpath = /var/log/nginx/error.log
+maxretry = 3

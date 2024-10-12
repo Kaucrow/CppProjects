@@ -6,12 +6,11 @@
     import { post } from '$lib/utils/requests/post'; 
     import { API_URI } from '$lib/utils/constant';
     import { goto } from '$app/navigation';
-    import { CLT_MOD } from '$lib/utils/constant';
 
     async function logout() {
         const [res, err] = await post(data.fetch, `${API_URI}/users/logout/`, undefined);
         if (res.ok) {
-            goto(`${CLT_MOD}/`);
+            goto('/');
         } else {
             console.error("ERROR");
         }

@@ -3,7 +3,6 @@
 
     import Header from "$lib/components/Header.svelte";
     import LogoutButton from "$lib/components/LogoutButton.svelte";
-    import { CLT_MOD } from "$lib/utils/constant.js";
 </script>
 
 <Header />
@@ -23,7 +22,7 @@
                 Yay!
             </p>
             <!-- Cirno -->
-            <img src={`${CLT_MOD}/cirno.gif`} alt="Cirno spin" class="w-20 h-auto mt-4"/>
+            <img src={'/cirno.gif'} alt="Cirno spin" class="w-20 h-auto mt-4"/>
         </div>
         <LogoutButton {data} />
     </div>

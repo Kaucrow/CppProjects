@@ -1,6 +1,4 @@
 # settings/base.yaml
-application:
-  port: 443
 
 database:
   username: "DB_USERNAME"

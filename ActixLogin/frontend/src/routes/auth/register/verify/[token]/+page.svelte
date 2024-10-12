@@ -6,7 +6,6 @@
     import type { CustomError } from '$lib/utils/types.js';
     import Header from '$lib/components/Header.svelte';
     import { onMount } from 'svelte';
-    import { CLT_MOD } from '$lib/utils/constant';
     
     let verified = false;
     let err: CustomError[] = [];
@@ -44,7 +43,7 @@
         </h1>
         <p class="text-lg text-neutral-600 dark:text-neutral-400">
             {#if verified}
-                You can now <a href={`${CLT_MOD}/auth/login`} class="text-blue-500 hover:text-blue-600">log in</a>.
+                You can now <a href={'/auth/login'} class="text-blue-500 hover:text-blue-600">log in</a>.
             {:else}
                 Please wait while we verify your details.
             {/if}
