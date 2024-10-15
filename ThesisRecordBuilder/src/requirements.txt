@@ -1,9 +1,0 @@
-python-docx
-pillow
-fitz
-PyMuPDF
-pytesseract
-opencv-python
-deskew
-lxml
-tqdm
